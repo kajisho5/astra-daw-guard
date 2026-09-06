@@ -1,0 +1,66 @@
+{
+  "_note_ja": "各エントリの rule は policy/deny.txt の該当行の原文（英語）。deny.txt の文言を変えたら、対応するエントリもここで手動更新すること（自動生成ではない）。",
+  "_note_en": "Each entry's `rule` mirrors the exact line in policy/deny.txt. If a deny.txt rule's wording changes, update the matching entry here by hand — this file is not auto-generated from deny.txt.",
+  "rules": [
+    {
+      "id": "no_unapproved_midi_download",
+      "rule": "Do not download .mid .midi .kar files without explicit user approval in this turn.",
+      "en": "I can't fetch a MIDI file from the web without your explicit approval in this message. Tell me the exact URL and confirm you want it fetched, or I can compose a new part instead.",
+      "ja": "このターンで明示的な許可がない限り、MIDIファイルをネットから取得できません。取得先URLを明示して許可するか、代わりに新規に作曲することもできます。"
+    },
+    {
+      "id": "no_scrape_midi_dumps",
+      "rule": "Do not scrape BitMidi, MIDIWorld, Free MIDI, or unnamed MIDI dump sites.",
+      "en": "I can't fetch that MIDI from the open web (BitMidi/MIDIWorld/Free MIDI and similar sites are off-limits regardless of approval). I can compose a new part in the same style, or use a file you provide directly.",
+      "ja": "そのMIDIは無断MIDI倉庫サイト（BitMidi・MIDIWorld・Free MIDIなど）からは取得できません。許可があっても対象外です。似た雰囲気のフレーズを新規作曲するか、ファイルを直接渡してください。"
+    },
+    {
+      "id": "no_unverified_public_domain",
+      "rule": "Do not treat \"public domain\" as proven unless the URL is on license-allowlist.txt.",
+      "en": "I won't treat this as public domain just because it's labeled that way — the host isn't on policy/license-allowlist.txt, so I can't verify the license.",
+      "ja": "「パブリックドメイン」という表示だけでは信頼できません。ホストが policy/license-allowlist.txt に無いため、ライセンスを確認できません。"
+    },
+    {
+      "id": "no_overwrite_save",
+      "rule": "Do not overwrite the open DAW project. Save As only, and only if the user asked.",
+      "en": "I won't overwrite the open project. If you'd like me to save, I'll use Save As with a new, timestamped filename.",
+      "ja": "開いているプロジェクトを上書き保存しません。保存が必要であれば、タイムスタンプ付きの新規ファイル名で Save As します。"
+    },
+    {
+      "id": "no_unlabeled_mixed_sources",
+      "rule": "Do not mix generated MIDI and imported material on one track without labeling source.",
+      "en": "I won't combine generated and imported material on the same track without labeling where each part came from.",
+      "ja": "生成した素材と外部から取り込んだ素材を、出典を明記せずに同じトラックへ混ぜません。"
+    },
+    {
+      "id": "no_window_manipulation",
+      "rule": "Do not minimize, move, or retile DAW windows.",
+      "en": "I won't move, resize, or retile the DAW's windows.",
+      "ja": "DAWのウィンドウを最小化・移動・再配置しません。"
+    },
+    {
+      "id": "no_display_settings_change",
+      "rule": "Do not change display zoom, color theme, or key bindings.",
+      "en": "I won't change the display zoom, color theme, or key bindings.",
+      "ja": "表示倍率・配色テーマ・キー割り当てを変更しません。"
+    },
+    {
+      "id": "no_plugin_install",
+      "rule": "Do not install plugins, pack content, or accept license dialogs.",
+      "en": "I won't install plugins or content packs, or respond to license/activation dialogs on your behalf.",
+      "ja": "プラグインやコンテンツパックのインストール、ライセンス/アクティベーションダイアログへの応答はしません。"
+    },
+    {
+      "id": "no_send_project_externally",
+      "rule": "Do not send the user's project file, stems, or unpublished songs to a remote URL except the model API already in use.",
+      "en": "I won't send your project file, stems, or unpublished songs anywhere except the model API already in use for this session.",
+      "ja": "プロジェクトファイル・ステム・未公開の楽曲を、このセッションで既に使っているモデルAPI以外の送信先には送りません。"
+    },
+    {
+      "id": "no_computer_use_when_adapter_available",
+      "rule": "Do not run Computer Use if an MCP/OSC adapter is available for the same action.",
+      "en": "I'll use the available MCP/OSC adapter for this instead of Computer Use, since it can do the same thing.",
+      "ja": "同じ操作ができるMCP/OSCアダプタがある場合、Computer Useではなくそちらを使います。"
+    }
+  ]
+}
