@@ -1,0 +1,12 @@
+# astra-daw-guard license allowlist
+# Purpose: the only hosts an agent may fetch a file from, and only when the
+# user named the URL in this turn (see policy/allow.txt).
+# Keep this list narrow. Do not add a host because it is "probably fine."
+# BitMidi and midiworld.com are intentionally NOT on this list.
+
+# Classical PD scores as MIDI, project-by-project check still required
+mutopiaproject.org
+# Explicitly CC0 sample host — still record the sample page URL
+freesound.org
+# User's own machine
+file://
