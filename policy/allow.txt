@@ -1,0 +1,12 @@
+# astra-daw-guard allow list
+# Purpose: the narrow set of actions an agent may take without asking again.
+# If an action is not listed here or does not clearly follow from the user's
+# request this turn, treat it as denied.
+
+Read the current set: tempo, time signature, track list, clip names, devices.
+Generate new MIDI from scratch when the user asked to compose.
+Write MIDI only into a new track named with prefix GEN-.
+Save As to a new filename that includes a timestamp if the user asked to save.
+Use MCP/OSC/ReaScript if already configured.
+Fetch a file only when: user named the URL in this turn AND the host is on license-allowlist.txt.
+Report sources after every run using checklists/after.md.

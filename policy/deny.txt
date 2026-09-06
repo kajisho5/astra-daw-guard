@@ -1,0 +1,14 @@
+# astra-daw-guard deny list
+# Purpose: hard rules an agent must never break while operating a DAW.
+# One rule per line. Imperative. No exceptions listed here.
+
+Do not download .mid .midi .kar files without explicit user approval in this turn.
+Do not scrape BitMidi, MIDIWorld, Free MIDI, or unnamed MIDI dump sites.
+Do not treat "public domain" as proven unless the URL is on license-allowlist.txt.
+Do not overwrite the open DAW project. Save As only, and only if the user asked.
+Do not mix generated MIDI and imported material on one track without labeling source.
+Do not minimize, move, or retile DAW windows.
+Do not change display zoom, color theme, or key bindings.
+Do not install plugins, pack content, or accept license dialogs.
+Do not send the user's project file, stems, or unpublished songs to a remote URL except the model API already in use.
+Do not run Computer Use if an MCP/OSC adapter is available for the same action.
