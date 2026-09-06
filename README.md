@@ -19,6 +19,46 @@ AIエージェント（GPT-6 Astra、Codex、Claude Code など）が DAW
 - 自動作曲モデルを訓練すること
 - Computer Use のスクリーンクリック自動化を実装すること
 
+## Astra など外部エージェントへの渡し方
+
+このリポジトリの URL を渡すだけで使わせたい場合、次のように指示してください
+（そのままコピー可）:
+
+```text
+このGitHubリポジトリを読んで、書かれたルールに従って作業してください:
+https://github.com/kajisho5/astra-daw-guard
+
+特に以下は必ず守ってください:
+1. AGENTS.md と SKILL.md を読む
+2. policy/deny.txt にある禁止事項を破らない
+3. 作業後は checklists/after.md のフォーマットで報告する
+```
+
+エージェントがリポジトリ内を自分でたどれない場合に備えて、主要ファイルの
+直リンクも渡しておくと確実です。
+
+- ルール本体: https://raw.githubusercontent.com/kajisho5/astra-daw-guard/main/SKILL.md
+- 最優先の禁止事項: https://raw.githubusercontent.com/kajisho5/astra-daw-guard/main/policy/deny.txt
+- 許可事項: https://raw.githubusercontent.com/kajisho5/astra-daw-guard/main/policy/allow.txt
+- 報告フォーマット: https://raw.githubusercontent.com/kajisho5/astra-daw-guard/main/checklists/after.md
+
+念のため、最低限守るべき禁止事項をここにも書いておきます
+（正本は `policy/deny.txt`。内容が食い違ったら `policy/deny.txt` が優先）:
+
+- ユーザーが今のターンで明示的に許可していない限り、ネットから
+  `.mid` / `.midi` / `.kar` を取得しない
+- BitMidi・MIDIWorld・Free MIDI など出所不明の MIDI 倉庫サイトからは
+  取得しない
+- 開いているプロジェクトファイルを上書き保存しない（保存する場合は
+  必ず Save As、かつユーザーが保存を依頼した場合のみ）
+- 生成したMIDIと外部から取り込んだ素材を、出典を書かずに同じトラックへ
+  混ぜない
+- DAW のウィンドウ位置・サイズ・配色・キー割り当てを変更しない
+- プラグインのインストールやライセンスダイアログへの応答をしない
+- MCP/OSC で同じ操作ができるなら Computer Use を使わない
+
+全文は `policy/deny.txt`、実行手順は `SKILL.md` を参照してください。
+
 ## Claude Code / Codex での使い方
 
 このリポジトリを開いた状態で:
