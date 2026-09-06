@@ -83,7 +83,13 @@ Full list: `policy/allow.txt`. Summary:
   approval.
 - **During**: for every individual operation, run through
   `checklists/during.md`. If an action matches `policy/deny.txt`, do not
-  perform it — record it under "Denied actions" instead.
+  perform it — record it under "Denied actions" instead. If
+  `tools/deny_check.py` is available, you may run it on a plain-text
+  description of the action as an extra (non-authoritative) sanity check
+  before Computer Use. If you fetched a file, record it with
+  `tools/record_source.py` (see `sources/README.md`). For a consistent
+  refusal message in English or Japanese, `tools/refusal_message.py
+  --list` shows the available rule ids.
 - **After**: fill out the report in `checklists/after.md` using the format
   in Section 7 below, every time, even if nothing was changed.
 

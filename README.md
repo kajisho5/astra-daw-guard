@@ -78,6 +78,12 @@ v0.1 はドキュメントのみです。コード・依存パッケージ・テ
 - [x] Reaper 読み取り専用 MCP（トラック一覧、テンポ） — `mcp-reaper/`
       に実装。ロジックはスタブ検証済みだが、実機の Reaper では未検証
       （詳細は `mcp-reaper/README.md`）
-- [ ] ダウンロードしたファイルのライセンス記録用 `sources.json`
-- [ ] Computer Use の前に deny を機械チェックする小さな CLI
-- [ ] 日本語 / 英語の拒否メッセージ辞書
+- [x] ダウンロードしたファイルのライセンス記録用 `sources.json` —
+      `sources/`（スキーマ・例）と `tools/record_source.py`（記録用CLI）
+      に実装・動作確認済み
+- [x] Computer Use の前に deny を機械チェックする小さな CLI —
+      `tools/deny_check.py`。標準ライブラリのみ、動作確認済み
+      （キーワード一致のヒューリスティックであり保証ではない）
+- [x] 日本語 / 英語の拒否メッセージ辞書 — `tools/refusal_messages.json`
+      + `tools/refusal_message.py`。`policy/deny.txt` の10ルールと
+      1対1対応していることを確認済み
