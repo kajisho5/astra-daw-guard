@@ -4,16 +4,22 @@
 
 Reaper ships with ReaScript (Lua/EEL2/Python), which can read and write
 project state directly, and has a long-standing OSC implementation for
-control surfaces. A dedicated MCP server for Reaper is not confirmed to
-exist as a stable, maintained project as of this writing — **未確認
-(unconfirmed)**. Treat any third-party Reaper MCP you find as
-community-made and self-responsibility until verified.
+control surfaces.
+
+This repository now ships its own read-only adapter: `../mcp-reaper/`
+(v0.2). It wraps `python-reapy` and exposes only `get_tempo`,
+`get_tracks`, and `get_project_info` — no write tools. Its logic has been
+verified against a stubbed `reapy.Project`, but **not yet against a real
+Reaper instance** — see `../mcp-reaper/README.md` for status. Any other
+third-party Reaper MCP you find beyond this one should still be treated
+as community-made and self-responsibility until verified.
 
 ## このリポジトリが推奨する操作手段 (Recommended method)
 
-- Until a vetted MCP exists, restrict ReaScript/OSC use to: reading
-  project state (tracks, tempo, time signature, items) and adding new
-  tracks/items. No deleting or overwriting existing items via script.
+- Prefer `../mcp-reaper/` for reading tempo/tracks/project info.
+- Beyond that adapter's read-only scope, restrict ReaScript/OSC use to:
+  reading project state (items, devices) and adding new tracks/items. No
+  deleting or overwriting existing items via script.
 - New generated material goes into a new track prefixed `GEN-`.
 
 ## Computer Use でやってはいけない UI

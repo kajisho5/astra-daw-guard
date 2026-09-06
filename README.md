@@ -33,9 +33,11 @@ v0.1 はドキュメントのみです。コード・依存パッケージ・テ
 `SKILL.md` と `policy/` `checklists/` `adapters/` `examples/` を読ませて
 運用することを想定しています。
 
-## 後続（v0.2 以降、未実装）
+## v0.2（進行中）
 
-- Reaper 読み取り専用 MCP（トラック一覧、テンポ）
-- ダウンロードしたファイルのライセンス記録用 `sources.json`
-- Computer Use の前に deny を機械チェックする小さな CLI
-- 日本語 / 英語の拒否メッセージ辞書
+- [x] Reaper 読み取り専用 MCP（トラック一覧、テンポ） — `mcp-reaper/`
+      に実装。ロジックはスタブ検証済みだが、実機の Reaper では未検証
+      （詳細は `mcp-reaper/README.md`）
+- [ ] ダウンロードしたファイルのライセンス記録用 `sources.json`
+- [ ] Computer Use の前に deny を機械チェックする小さな CLI
+- [ ] 日本語 / 英語の拒否メッセージ辞書

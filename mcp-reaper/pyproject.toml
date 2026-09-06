@@ -1,0 +1,16 @@
+[project]
+name = "astra-daw-guard-reaper-mcp"
+version = "0.1.0"
+description = "Read-only MCP server exposing Reaper project state via reapy (astra-daw-guard v0.2)"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=2.0.0",
+    "python-reapy>=0.10.0",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["reaper_mcp*"]
