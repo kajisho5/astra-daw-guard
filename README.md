@@ -48,7 +48,11 @@ DAWは2026-09-07時点で個別に調査し、結果を`adapters/*.md`に記録�
 
 各アダプタの詳細・セットアップ手順は `mcp-reaper/README.md` /
 `mcp-ableton/README.md` / `mcp-ardour/README.md` / `adapters/*.md` を
-参照してください。
+参照してください。3つとも `python3 install.py` で自動化できる部分は
+自動化していますが、DAW側の設定変更（例: Ableton の Preferences で
+Control Surface を選ぶ）は各アプリの外からは変更できないため手動です。
+MCPのセットアップが不要な場合は、ガードレール本体（`SKILL.md` /
+`policy/`）だけでも機能します。
 
 ## Astra など外部エージェントへの渡し方
 

@@ -38,10 +38,22 @@ Ardour自身が最初からOSCサーバーを内蔵しています）。**書き
 
 ## セットアップ
 
+3つのアダプタの中で一番セットアップが軽いです。外部ファイルの配置が
+不要で、Ardour自体の設定を1箇所変えるだけです。
+
 ```bash
 cd mcp-ardour
-pip install -e .
+python3 install.py
 ```
+
+（`pip install -e .` を実行するだけのスクリプトです。）
+
+その上で、Ardour側で1回だけ:
+
+- Preferences > Control Surfaces > **Open Sound Control (OSC)** を有効化
+  （Port Mode は Auto のまま）
+
+これはArdourの外からは変更できないため、手動が必要です。
 
 ## 起動
 

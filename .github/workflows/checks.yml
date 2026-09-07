@@ -15,12 +15,13 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Byte-compile all mcp-*/ packages
+      - name: Byte-compile all mcp-*/ packages and their install.py
         run: |
           set -e
           for dir in mcp-reaper mcp-ableton mcp-ardour; do
             echo "== $dir =="
             python3 -m py_compile "$dir"/*/*.py
+            python3 -m py_compile "$dir"/install.py
           done
 
       - name: Byte-compile tools/*.py
