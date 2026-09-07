@@ -166,7 +166,7 @@ B/D/E/Fは「今回不採用」であり「永久に不要」ではない。D/E/
   実装しなかった（無いものを実装したふりをしない、という一貫した方針）
 - `policy_engine/rules.py`の既存ルール・`policy/deny.txt`・`mcp-reaper`・
   `mcp-ardour`・`enforcement/boundary.py`は無変更
-- テスト152件→177件、全通過
+- テスト152件→182件、全通過（マージ前レビュー計5件の指摘のうち全て修正、詳細は`CHANGELOG.md`のv0.9.3参照）
 
 ## Next phase
 

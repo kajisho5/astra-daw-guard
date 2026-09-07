@@ -157,6 +157,23 @@ class AskTests(unittest.TestCase):
     def test_tempo_change_without_confirmed_request(self):
         d = evaluate({"operation": "tempo.change", "attributes": {"bpm": 128.0}})
         self.assertEqual(d.decision, ASK)
+
+    def test_tempo_change_with_truthy_but_non_boolean_confirmation_still_asks(self):
+        # CodeRabbit review finding on PR #47 (CWE-863 Authorization
+        # Bypass): the predicate used to check truthiness, so a
+        # malformed Action carrying the string "false" -- truthy in
+        # Python -- or the int 1 would auto-ALLOW tempo changes despite
+        # never actually receiving a real user confirmation this turn.
+        for bogus_value in ("false", 1):
+            with self.subTest(user_requested_this_turn=bogus_value):
+                d = evaluate(
+                    {
+                        "operation": "tempo.change",
+                        "attributes": {"bpm": 128.0, "user_requested_this_turn": bogus_value},
+                    }
+                )
+                self.assertEqual(d.decision, ASK)
+                self.assertEqual(d.rule_id, "TEMPO_CHANGE_UNCONFIRMED")
         self.assertEqual(d.rule_id, "TEMPO_CHANGE_UNCONFIRMED")
 
 

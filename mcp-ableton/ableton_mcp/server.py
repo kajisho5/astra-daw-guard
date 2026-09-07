@@ -31,6 +31,7 @@ confirmation that AbletonOSC never sends.
 
 from __future__ import annotations
 
+import struct
 import time
 
 from mcp.server.mcpserver import MCPServer
@@ -140,17 +141,29 @@ def get_tracks() -> list[dict]:
     return tracks
 
 
-def _approx_equal(a: object, b: object, tol: float = 1e-4) -> bool:
-    """Numeric-tolerant equality for confirming a float write landed.
+def _as_osc_float32(value: float) -> float:
+    """Round a Python float to the nearest float32, matching what OSC
+    actually transmits on the wire."""
+    return struct.unpack("<f", struct.pack("<f", value))[0]
+
+
+def _approx_equal(a: object, b: object) -> bool:
+    """Float32-tolerant equality for confirming a float write landed.
 
     OSC transmits floats as 32-bit, so a value read back after being
     sent (e.g. a volume or tempo) may differ from the original Python
     float by float32 rounding even when the write worked correctly --
-    exact `==` would be too strict. Falls back to `==` for non-numeric
-    values (e.g. track names).
+    exact `==` would be too strict. A large fixed tolerance would be
+    too loose in the other direction: it could confirm a genuinely
+    dropped write as if it had landed, whenever the pre-existing value
+    happened to already be close to the requested one. Rounding both
+    values to their float32 wire representation and comparing that is
+    tight enough to catch a dropped write while tolerant enough for
+    the rounding OSC itself introduces. Falls back to `==` for
+    non-numeric values (e.g. track names).
     """
     try:
-        return abs(float(a) - float(b)) <= tol
+        return _as_osc_float32(float(a)) == _as_osc_float32(float(b))
     except (TypeError, ValueError):
         return a == b
 
@@ -297,10 +310,18 @@ def set_mixer_property(track_name: str, param: str, value: float, approved: bool
     independently confirmed in this environment (community references
     describe 0.0-1.0 for volume with ~0.85 as unity gain, and -1.0-1.0
     for panning, but treat that as unverified until checked against
-    real Ableton Live). `mute`/`solo` take 0/1 (sent as int(bool(value))).
+    real Ableton Live). `mute`/`solo` only accept a boolean or 0/1 --
+    anything else raises `ValueError` rather than silently coercing it
+    (e.g. `0.5` would otherwise send `1` over OSC while the recorded
+    Action and audit log kept `0.5`, an integrity mismatch).
     """
     if param not in _MIXER_PARAM_ADDRESSES:
         raise ValueError(f"param must be one of {sorted(_MIXER_PARAM_ADDRESSES)}, got {param!r}")
+
+    if param in ("mute", "solo"):
+        if not isinstance(value, bool) and value not in (0, 1):
+            raise ValueError(f"{param} must be a boolean or 0/1, got {value!r}")
+        value = int(bool(value))
 
     action = {
         "operation": "track.mixer_change",
@@ -309,7 +330,7 @@ def set_mixer_property(track_name: str, param: str, value: float, approved: bool
 
     def _do() -> dict:
         track_index = _find_track_index(track_name)
-        wire_value = int(bool(value)) if param in ("mute", "solo") else value
+        wire_value = value
         address = _MIXER_PARAM_ADDRESSES[param]
         _osc().send(address, track_index, wire_value)
         prop = address.rsplit("/", 1)[-1]  # e.g. "/live/track/set/panning" -> "panning"

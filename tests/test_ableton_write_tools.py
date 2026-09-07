@@ -266,6 +266,46 @@ class SetMixerPropertyEnforcementTests(unittest.TestCase):
             with self.assertRaises(ableton_server.AbletonWriteUnconfirmed):
                 ableton_server.set_mixer_property("GEN-melody", "volume", 0.7)
 
+    def test_dropped_write_near_preexisting_value_is_not_falsely_confirmed(self):
+        # CodeRabbit review finding on PR #47: a fixed 1e-4 tolerance
+        # could confirm a genuinely dropped write as landed whenever the
+        # pre-existing value already sat within that tolerance of the
+        # requested one (e.g. existing 0.7, dropped request 0.70005).
+        # float32-rounding the comparison instead still catches the drop.
+        osc = _FakeAbletonOSC(track_names=["GEN-melody"], drop_mixer=True)
+        osc.mixer[(0, "volume")] = 0.7
+        with mock.patch.object(ableton_server, "_osc", return_value=osc), mock.patch.object(
+            ableton_server, "time"
+        ):
+            with self.assertRaises(ableton_server.AbletonWriteUnconfirmed):
+                ableton_server.set_mixer_property("GEN-melody", "volume", 0.70005)
+
+    def test_non_boolean_mute_value_is_rejected_before_touching_osc(self):
+        # CodeRabbit review finding on PR #47: int(bool(0.5)) sends 1
+        # over OSC while the recorded Action/audit data kept 0.5 --
+        # reject non-boolean values instead of silently coercing them.
+        osc = _FakeAbletonOSC(track_names=["GEN-melody"])
+        with mock.patch.object(ableton_server, "_osc", return_value=osc):
+            with self.assertRaises(ValueError):
+                ableton_server.set_mixer_property("GEN-melody", "mute", 0.5)
+        self.assertEqual(osc.sent, [])
+
+    def test_mute_action_records_the_same_normalized_value_that_is_sent(self):
+        osc = _FakeAbletonOSC(track_names=["GEN-melody"])
+        captured: dict = {}
+        real_enforce = ableton_server.enforce
+
+        def spy_enforce(action, *args, **kwargs):
+            captured["action"] = action
+            return real_enforce(action, *args, **kwargs)
+
+        with mock.patch.object(ableton_server, "_osc", return_value=osc), mock.patch.object(
+            ableton_server, "enforce", side_effect=spy_enforce
+        ):
+            ableton_server.set_mixer_property("GEN-melody", "mute", True)
+        self.assertEqual(captured["action"]["attributes"]["value"], 1)
+        self.assertEqual(osc.mixer[(0, "mute")], 1)
+
 
 @unittest.skipIf(_IMPORT_ERROR is not None, f"ableton_mcp.server not importable: {_IMPORT_ERROR}")
 class SetDeviceParameterEnforcementTests(unittest.TestCase):
@@ -371,6 +411,19 @@ class SetTempoEnforcementTests(unittest.TestCase):
         ):
             with self.assertRaises(ableton_server.AbletonWriteUnconfirmed):
                 ableton_server.set_tempo(128.0, user_requested_this_turn=True)
+
+    def test_dropped_tempo_near_preexisting_value_is_not_falsely_confirmed(self):
+        # Same float32-tolerance fix as SetMixerPropertyEnforcementTests's
+        # equivalent test, applied to tempo (the exact scenario
+        # CodeRabbit's review comment used: existing 120.0, dropped
+        # request landing within the old fixed tolerance).
+        osc = _FakeAbletonOSC(track_names=[], drop_tempo=True)
+        osc.tempo = 120.0
+        with mock.patch.object(ableton_server, "_osc", return_value=osc), mock.patch.object(
+            ableton_server, "time"
+        ):
+            with self.assertRaises(ableton_server.AbletonWriteUnconfirmed):
+                ableton_server.set_tempo(120.00005, user_requested_this_turn=True)
 
 
 if __name__ == "__main__":

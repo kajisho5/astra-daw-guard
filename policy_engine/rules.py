@@ -367,7 +367,10 @@ RULES: list[Rule] = [
         decision=ALLOW,
         reason="Tempo change explicitly requested by the user this turn.",
         source_text="Change tempo (BPM) if the user asked in this turn.",
-        predicate=lambda a: a.operation == "tempo.change" and a.attr("user_requested_this_turn", False),
+        predicate=lambda a: (
+            a.operation == "tempo.change"
+            and a.attr("user_requested_this_turn") is True
+        ),
     ),
     Rule(
         rule_id="TEMPO_CHANGE_UNCONFIRMED",

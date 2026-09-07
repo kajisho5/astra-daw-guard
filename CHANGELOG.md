@@ -359,7 +359,26 @@ Ableton Live全体の制御をしたい」との要望。Policy Engineでゲー�
       実質重複した辞書だった（保守性の問題、将来の追加時に片方だけ
       更新し忘れるリスク）。アドレス文字列からプロパティ名を導出する
       形に統合した
+- [x] PR #47（CodeRabbit）のレビューでさらに3件発見・修正: (1)
+      **認可バイパス（CWE-863）**: `TEMPO_CHANGE_APPROVED`ルールの
+      predicateが`user_requested_this_turn`を真偽値チェックではなく
+      truthinessで判定していたため、文字列`"false"`（Pythonでは
+      truthy）や整数`1`を渡すと実際にはユーザー確認が無くてもテンポ変更が
+      自動ALLOWされてしまう欠陥があった。`is True`の厳密比較に修正し、
+      `"false"`/`1`のどちらもASKに落ちることを回帰テストで確認。(2)
+      `set_mixer_property`の`mute`/`solo`が`int(bool(value))`で送信値を
+      丸めていたのに、Policy Engineに記録するAction/監査ログ側は
+      丸める前の生の値（例: `0.5`）を保持していたため、実際に送信した
+      値と監査記録が食い違う欠陥があった。`mute`/`solo`はブール値または
+      `0`/`1`のみを受け付け、それ以外は`ValueError`で拒否した上で、
+      Action構築前に正規化するよう修正。(3) 書き込み確認の許容誤差が
+      固定`tol=1e-4`だったため、既存値がその範囲内にたまたま近い
+      場合、実際には失敗した書き込み（ドロップ）を「確認できた」と
+      誤判定する余地があった（例: 既存120.0、送信ドロップ後の
+      120.00005も一致とみなされてしまう）。OSCが実際に伝送する
+      float32表現に両者を丸めてから比較する方式に変更し、この
+      誤判定が起きないことを回帰テストで確認
 
 `policy_engine/rules.py`の既存ルール・`policy/deny.txt`・`mcp-reaper`・
-`mcp-ardour`・`enforcement/boundary.py`は無変更。テストは152件→177件
+`mcp-ardour`・`enforcement/boundary.py`は無変更。テストは152件→182件
 （全通過）。実機Ableton Liveでの動作は今回も未検証のまま。
