@@ -145,9 +145,9 @@ With this repository open:
 
 ## Current status
 
-The latest version is `v0.9.3`. Both the Policy Engine
+The latest version is `v0.9.3.1`. Both the Policy Engine
 (`policy_engine/`) and the Enforcement Boundary (`enforcement/`) are
-implemented, with all 182 tests passing. Reaper and Ableton Live now
+implemented, with all 184 tests passing. Reaper and Ableton Live now
 have a set of Policy-Engine-gated write tools (Issues #44, #46); see
 `CHANGELOG.md` for the full development history, and `ROADMAP.md` for
 the current assessment and what's next.
