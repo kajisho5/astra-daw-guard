@@ -32,13 +32,13 @@ GPT-6 Astra などのAIエージェントが DAW（Reaper / Ableton Live / Ardou
 
 ## Current state（2026-09-07時点）
 
-- `main` HEAD: `72b63ae`
-- テスト: 127件、全通過（`python3 -m unittest tests.test_policy_engine
-  tests.test_enforcement tests.test_cli tests.test_security_regression
-  tests.test_audit_separation tests.test_decision_messages
-  tests.test_benchmark tests.test_evaluate_plan tests.test_daw_state -v`）
-- GitHub Issues: #10, #12, #14, #16, #25, #26 は全てCLOSED（重複なし確認済み）。
-  OPENのIssueは無し
+- `main` HEAD: `b5965ae`
+- テスト: 135件、全通過（`python3 -m unittest discover -s tests -p "test_*.py" -v`）
+- GitHub Issues: #10, #12, #14, #16, #25, #26, #31, #34, #37, #38 は
+  全てCLOSED（重複なし確認済み）。OPENのIssueは #32
+  （リモートfeatureブランチの削除 — この実行環境のgit権限制限
+  （`HTTP 403`）でセッション側からは対応不可、ユーザーの手動削除待ち）
+  のみ
 - ガードレール本体（`SKILL.md` / `policy/`）は全DAW共通
 - 読み取り専用MCP: Reaper / Ableton Live / Ardour の3つのみ、いずれも
   実機未検証（擬似サーバーでのロジック検証のみ）
@@ -62,6 +62,7 @@ GPT-6 Astra などのAIエージェントが DAW（Reaper / Ableton Live / Ardou
 | v0.7 | Enforcement Boundary（`enforcement/`、Tool実行そのものをゲート） | Issue #14, PR #15 |
 | v0.8 | Runtime Efficiency & UX Optimization（in-process優先、Capability分離、output最小化、セキュリティ回帰テスト、Audit separation、Approval/Failure UX、ベンチマーク、ドキュメント整理） | Issue #16, PR #17-#24 |
 | v0.9 | 次フェーズ監査、`evaluate_plan()`（計画の事前一括チェック）、`DAWStateSnapshot`（監査文脈用、判定ロジックは無変更） | Issue #25, #26, PR #27-#29 |
+| — | 自己レビュー・品質改善(新機能なし): CI test-discovery自動化、`policy_engine`のfail-closed型安全性バグ3件の発見・修正、`CONTRIBUTING.md`新設、`tools/benchmark.py`のゼロ反復クラッシュ修正、`mcp-ardour`の`query_list()`タイムアウト予算修正 | Issue #31, #34, #37, #38, PR #33, #35, #36, #39 |
 
 ## 前回の監査フェーズ — 記録（2026-09-07実施）
 
@@ -113,11 +114,16 @@ B/D/E/Fは「今回不採用」であり「永久に不要」ではない。D/E/
 
 ## Next phase
 
-現時点で採用済み・未着手のIssueは無い(OPENのIssueなし)。次に何を
-やるかは、このリポジトリを再監査するか、ユーザーからの新しい要望を
-起点に決める。「候補を思いつきで実装する」ことはしない — 上記の監査
-と同じ規律(実装可能性・DAW固有価値・既存設計との整合性の検証、不要な
-ものは不採用と明記)を毎回通すこと。
+機能面で採用済み・未着手のIssueは無い。OPENのIssueは#32
+（リモートブランチ削除、環境のgit権限制限でセッション側からは対応
+不可）のみで、これはユーザーの手動対応待ち。次に何をやるかは、この
+リポジトリを再監査するか、ユーザーからの新しい要望を起点に決める。
+「候補を思いつきで実装する」ことはしない — 上記の監査と同じ規律
+(実装可能性・DAW固有価値・既存設計との整合性の検証、不要なものは
+不採用と明記)を毎回通すこと。エンジニアリング作業の進め方（ブランチ
+運用、PR粒度、squash-merge時のcommit message、`policy_engine/` /
+`enforcement/`変更時の独立レビュー必須化など）は`CONTRIBUTING.md`に
+分離して記録している。
 
 ## 非目的(恒久)
 
