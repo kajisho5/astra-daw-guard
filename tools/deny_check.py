@@ -8,6 +8,12 @@ it before Computer Use, per SKILL.md's priority order (MCP > read-only >
 Computer Use), as one more sanity check — not a replacement for actually
 reading policy/deny.txt and checklists/during.md.
 
+For an authoritative, structured (non-heuristic) decision, use
+policy_engine/ instead (see policy_engine/README.md) — it takes a
+machine-readable Action, not free text, and is fail-closed. This script
+and policy_engine/ are deliberately separate tools with different
+guarantees; this one staying a heuristic is not a bug.
+
 Usage:
     python3 tools/deny_check.py "download a midi file from bitmidi.com"
     echo "save as project_2026.als" | python3 tools/deny_check.py

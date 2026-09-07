@@ -88,10 +88,17 @@ Full list: `policy/allow.txt`. Summary:
   without approval.
 - **During**: for every individual operation, run through
   `checklists/during.md`. If an action matches `policy/deny.txt`, do not
-  perform it — record it under "Denied actions" instead. If
-  `tools/deny_check.py` is available, you may run it on a plain-text
-  description of the action as an extra (non-authoritative) sanity check
-  before Computer Use. If you fetched a file, record it with
+  perform it — record it under "Denied actions" instead. **If
+  `policy_engine/` is available, prefer it over your own natural-language
+  reading of `policy/deny.txt`**: express the operation as an Action
+  (see `policy_engine/README.md`) and check `evaluate(action).decision`
+  — ALLOW means proceed, ASK means confirm with the user first, DENY
+  means do not perform it (record it under "Denied actions"). This is
+  authoritative, not a heuristic. If `policy_engine/` isn't available,
+  fall back to reading `policy/deny.txt` yourself, optionally sanity-
+  checked with `tools/deny_check.py` (a non-authoritative keyword
+  heuristic — see its own docstring for why it's not a substitute for
+  `policy_engine/`). If you fetched a file, record it with
   `tools/record_source.py` (see `sources/README.md`). For a consistent
   refusal message in English or Japanese, `tools/refusal_message.py
   --list` shows the available rule ids.
