@@ -1,0 +1,111 @@
+name: checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Byte-compile all mcp-*/ packages
+        run: |
+          set -e
+          for dir in mcp-reaper mcp-ableton mcp-ardour; do
+            echo "== $dir =="
+            python3 -m py_compile "$dir"/*/*.py
+          done
+
+      - name: Byte-compile tools/*.py
+        run: python3 -m py_compile tools/*.py
+
+      - name: Validate JSON files parse
+        run: |
+          python3 -c "import json; json.load(open('tools/refusal_messages.json'))"
+          python3 -c "import json; json.load(open('sources/sources.example.json'))"
+
+      - name: refusal_messages.json must match policy/deny.txt 1:1
+        run: |
+          python3 - <<'EOF'
+          import json, pathlib, sys
+
+          data = json.loads(pathlib.Path("tools/refusal_messages.json").read_text())
+          rules = data["rules"]
+
+          deny_lines = [
+              l.strip()
+              for l in pathlib.Path("policy/deny.txt").read_text().splitlines()
+              if l.strip() and not l.strip().startswith("#")
+          ]
+
+          dict_rule_texts = [r["rule"] for r in rules]
+          missing = [l for l in deny_lines if l not in dict_rule_texts]
+          extra = [r for r in dict_rule_texts if r not in deny_lines]
+          ids = [r["id"] for r in rules]
+          dupes = [i for i in ids if ids.count(i) > 1]
+
+          ok = True
+          if len(deny_lines) != len(rules):
+              print(f"FAIL: policy/deny.txt has {len(deny_lines)} rules, "
+                    f"refusal_messages.json has {len(rules)}")
+              ok = False
+          if missing:
+              print("FAIL: deny.txt rules missing from refusal_messages.json:", missing)
+              ok = False
+          if extra:
+              print("FAIL: refusal_messages.json entries not in deny.txt:", extra)
+              ok = False
+          if dupes:
+              print("FAIL: duplicate ids in refusal_messages.json:", dupes)
+              ok = False
+          for r in rules:
+              if not r["en"].strip() or not r["ja"].strip():
+                  print(f"FAIL: empty en/ja for {r['id']}")
+                  ok = False
+
+          if not ok:
+              sys.exit(1)
+          print(f"OK: {len(rules)} rules match 1:1")
+          EOF
+
+      - name: ROADMAP completion thresholds (deny >= 8 rules, allowlist < 5 hosts)
+        run: |
+          python3 - <<'EOF'
+          import pathlib, sys
+
+          deny_lines = [
+              l for l in pathlib.Path("policy/deny.txt").read_text().splitlines()
+              if l.strip() and not l.strip().startswith("#")
+          ]
+          allow_hosts = [
+              l for l in pathlib.Path("policy/license-allowlist.txt").read_text().splitlines()
+              if l.strip() and not l.strip().startswith("#")
+          ]
+
+          ok = True
+          if len(deny_lines) < 8:
+              print(f"FAIL: policy/deny.txt has only {len(deny_lines)} rules (need >= 8)")
+              ok = False
+          if len(allow_hosts) >= 5:
+              print(f"FAIL: policy/license-allowlist.txt has {len(allow_hosts)} hosts (need < 5)")
+              ok = False
+          if not ok:
+              sys.exit(1)
+          print(f"OK: {len(deny_lines)} deny rules, {len(allow_hosts)} allowlist hosts")
+          EOF
+
+      - name: SKILL.md must stay under 200 lines
+        run: |
+          lines=$(wc -l < SKILL.md)
+          echo "SKILL.md has $lines lines"
+          if [ "$lines" -gt 200 ]; then
+            echo "FAIL: SKILL.md exceeds 200 lines"
+            exit 1
+          fi
