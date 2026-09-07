@@ -30,10 +30,23 @@ CAPABILITY_MATRIX: dict[str, set[str]] = {
 }
 
 
-def mcp_supports(daw: str, operation: str) -> bool:
+def mcp_supports(daw: object, operation: object) -> bool:
     """Return True if this repo's MCP adapter for `daw` can do `operation`.
 
     An unknown DAW or unknown operation both return False: this function
-    only ever claims a capability it can point at real code for.
+    only ever claims a capability it can point at real code for. `daw`
+    and `operation` are typed `str` in normal use but, like any Action
+    attribute (see schema.py), can arrive as any JSON type from a
+    malformed Action -- e.g. `daw: 123` or `capability: ["read.tempo"]`.
+    Neither `str(daw or "").lower()` nor an unhashable `operation` may
+    raise: both must fail closed to False (never claiming a capability
+    exists) rather than crashing the caller (rules.py's
+    computer_use.invoke rules, which decide DENY/ALLOW from this).
     """
-    return daw.lower() in CAPABILITY_MATRIX.get(operation, set())
+    try:
+        return str(daw or "").lower() in CAPABILITY_MATRIX.get(operation, set())
+    except TypeError:
+        # `operation` was unhashable (e.g. a list) -- CAPABILITY_MATRIX
+        # has no such key by construction, so the honest answer is the
+        # same as "not supported".
+        return False

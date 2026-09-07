@@ -95,13 +95,18 @@ _DUMP_SITE_HOSTS = {"bitmidi.com", "midiworld.com", "freemidi.org"}
 _LICENSE_ALLOWLIST_HOSTS = {"mutopiaproject.org", "freesound.org"}
 
 
-def _host_is_dump_site(host: str) -> bool:
-    host = (host or "").lower()
+def _host_is_dump_site(host: object) -> bool:
+    # `host` comes straight from an Action's attributes (see schema.py),
+    # so it can be any JSON type, not just a string -- e.g. an Action
+    # with `{"host": 123}`. str() coercion keeps this a normal (if
+    # non-matching) comparison instead of an AttributeError, matching
+    # this engine's fail-closed promise (evaluate() must never raise).
+    host = str(host or "").lower()
     return any(host == h or host.endswith("." + h) for h in _DUMP_SITE_HOSTS)
 
 
-def _host_on_license_allowlist(host: str) -> bool:
-    host = (host or "").lower()
+def _host_on_license_allowlist(host: object) -> bool:
+    host = str(host or "").lower()
     if host == "file":
         return True
     return any(host == h or host.endswith("." + h) for h in _LICENSE_ALLOWLIST_HOSTS)
