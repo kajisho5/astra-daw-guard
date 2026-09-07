@@ -9,12 +9,15 @@ See README.md in this directory for the Action Schema, decision format,
 fail-closed philosophy, and capability model.
 """
 
-from .engine import evaluate
+from .engine import evaluate, evaluate_plan, plan_is_clear, worst_decision
 from .rules import ALLOW, ASK, DENY, Decision
 from .schema import Action, ActionSchemaError
 
 __all__ = [
     "evaluate",
+    "evaluate_plan",
+    "plan_is_clear",
+    "worst_decision",
     "ALLOW",
     "ASK",
     "DENY",
