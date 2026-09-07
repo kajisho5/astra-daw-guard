@@ -13,17 +13,27 @@ For every operation you are about to perform:
    See the table below for common cases, or `policy_engine/README.md`
    for the full operation catalog and every field's meaning.
 2. Run it through the Policy Engine — this is the authoritative check,
-   not `tools/deny_check.py`:
-
-   ```bash
-   echo '<action json>' | python3 -m policy_engine.cli
-   ```
-
-   or, inside a Python process that already has this repo importable:
+   not `tools/deny_check.py`. **If your tool-calling code runs inside
+   the same Python process that has this repo importable (this is the
+   normal case for an agent driving MCP/OSC/`enforcement` tool calls),
+   call it in-process:**
 
    ```python
    from policy_engine import evaluate
    decision = evaluate(action)
+   ```
+
+   This check runs once per operation, so its cost adds up over a whole
+   session — an in-process call is a single function call (microseconds),
+   while shelling out to the CLI below re-starts a Python interpreter
+   every time (tens of milliseconds). Prefer in-process whenever you can.
+
+   Only fall back to the CLI form when the caller genuinely cannot import
+   this repo (e.g. checking from a shell script, or from a non-Python
+   process):
+
+   ```bash
+   echo '<action json>' | python3 -m policy_engine.cli
    ```
 3. Act on `decision`:
    - `ALLOW` → proceed.
