@@ -48,7 +48,7 @@ GPT-6 Astra などのAIエージェントが DAW（Reaper / Ableton Live / Ardou
   （`enforcement/`）が実装済み。ただし実際のAstra Agent runtimeとの
   結線は無い（このリポジトリには実行中のAgentループが存在しないため）
 
-## Completed（バージョン履歴の要約。詳細は README.md 参照）
+## Completed（バージョン履歴の要約。詳細は CHANGELOG.md 参照）
 
 | バージョン | 内容 | 参照 |
 |---|---|---|
