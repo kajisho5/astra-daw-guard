@@ -22,6 +22,26 @@
 
 - `Do not overwrite the open DAW project. Save As only, and only if the user asked.`
 
+## Policy Engineに通していれば防げていた
+
+保存を実行する前に `checklists/during.md` の手順で Policy Engine に
+通していれば、この時点でDENYが返っていた:
+
+```bash
+$ echo '{"operation": "project.save", "attributes": {"mode": "overwrite"}}' | python3 -m policy_engine.cli
+{
+  "decision": "DENY",
+  "rule_id": "PROJECT_OVERWRITE",
+  "reason": "Overwriting the currently open project is never allowed, regardless of user request.",
+  ...
+}
+```
+
+`reason`にある通り、**ユーザーが保存を依頼していたとしても**
+`mode: overwrite`である限りDENYになる（`policy/deny.txt`にオーバーライドの
+例外は無いため）。正しくは`mode: "save_as"`にして
+`user_requested_this_turn`を確認する。
+
 ## 正しい行動（Save As に変える）
 
 - 保存の依頼が無ければ、そもそも保存しない
