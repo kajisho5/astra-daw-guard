@@ -136,6 +136,41 @@ Computer UseはDENY」を機械的に判定します。したがってArdourで
 `tests/test_policy_engine.py`の`CapabilityMatrixTests`が、この表が
 実際の`mcp-*/*/server.py`のツール定義と一致しているかをASTで検証します。
 
+## DAW State Snapshot(監査文脈用、判定には影響しない — Issue #25)
+
+`policy_engine/daw_state.py`は、Actionが提案された時点でDAWが
+どういう状態だったかを、`attributes["daw_state"]`という決まった場所に
+構造化して残すためのヘルパーです。**これはPolicy判定を一切変えません**
+— `rules.py`のどのルールも`daw_state`を読みません。
+
+```python
+from policy_engine import evaluate
+from policy_engine.daw_state import from_reaper, attach_to_attributes
+
+# tempo/tracks/project_infoは、mcp-reaperの各ツールを呼んで得た
+# 実際の戻り値をそのまま渡す(policy_engineがMCPを直接呼ぶことはない)
+snapshot = from_reaper(tempo=tempo_result, tracks=tracks_result, project_info=project_info_result)
+
+action = {"operation": "track.create", "attributes": {"name": "GEN-bass"}}
+action["attributes"] = attach_to_attributes(action["attributes"], snapshot)
+
+decision = evaluate(action)  # snapshotを付けても判定結果は変わらない
+```
+
+- `from_reaper()` / `from_ableton()` / `from_ardour()`: 各DAWの実際の
+  MCPツールの戻り値の形からそのまま構築する(希望的観測でフィールドを
+  埋めない。`from_ardour()`の`tempo_bpm`は常に`None` — Ardourの
+  OSCサーフェスにテンポ取得コマンドが無いため)
+- `attach_to_attributes(attributes, snapshot)`: `attributes`のコピーに
+  `daw_state`キーで追加するだけ(既存キーは上書きしない、入力もmutateしない)
+- `enforcement.enforce(..., audit_log=log)`の監査ログは、`Decision.attributes`
+  をそのまま記録するため(Issue #16 Step 5)、この`daw_state`も追加の
+  実装なしでそのまま監査ログに残ります
+
+`tests/test_daw_state.py`が、`daw_state`を付けても付けなくても
+ALLOW/ASK/DENY・fail-closedのどの判定結果も変わらないことを、
+複数の代表的なoperationで固定しています。
+
 ## 使い方
 
 ### Pythonから
@@ -189,7 +224,8 @@ CLI自体(デフォルト出力の最小化・`--full`/`--pretty`・終了コー
 `tests/test_cli.py`(8テスト)で別途検証しています。Issue #16の
 Token/UX最適化(Step 1-3)がALLOW/ASK/DENYの判定結果やルールの並び順を
 変えていないことは`tests/test_security_regression.py`(12テスト)で
-横断的に固定しています。
+横断的に固定しています。`daw_state`(Issue #25)が判定結果を変えない
+ことは`tests/test_daw_state.py`(9テスト)で固定しています。
 
 - `policy/deny.txt`の10ルールそれぞれに対応するDENYケース
 - `policy/allow.txt`の許可ケース(ALLOW)
