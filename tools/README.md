@@ -53,6 +53,22 @@ python3 tools/refusal_message.py no_overwrite_save --lang ja
 `policy/deny.txt` の文言を変更した場合、`refusal_messages.json` 内の
 対応するエントリも手動で更新してください（自動生成ではありません）。
 
+## `benchmark.py` — 再現可能なマイクロベンチマーク（Issue [#16](https://github.com/kajisho5/astra-daw-guard/issues/16)、Phase 9）
+
+Issue #16 Phase 1で手動計測した「in-process呼び出し vs CLI subprocess」の
+差を、いつでも実行して再現できるスクリプトにしたもの。
+
+```bash
+python3 tools/benchmark.py
+python3 tools/benchmark.py --iterations 500
+```
+
+**このスクリプトが出す数値は、実行したその環境・その1回の実測値です。**
+Astra実機での本番の数値ではありません（本リポジトリにはAstraの実行
+環境が無いため、それは原理的に計測不能）。過去の実行結果やdocstringの
+数値を「現在の性能」として引用せず、必要なときは自分で実行して
+ください。
+
 ## 動作確認について
 
 このセッションで実際に Python 3 で実行し、想定通りの入出力になることを
