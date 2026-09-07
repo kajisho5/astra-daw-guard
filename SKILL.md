@@ -38,6 +38,17 @@ Always prefer, in this order:
 
 Never use Computer Use to do something an MCP/OSC adapter could already do.
 
+**If no MCP/OSC adapter is already configured and running, treat it as
+unavailable and drop straight to Computer Use (or manual read-only
+inspection) for this task — do not stop the task to walk the user
+through installing or configuring one.** This repo's `mcp-*/install.py`
+scripts and adapter setup steps are opt-in tools the user can run on
+their own time, never a blocker you impose mid-task. Only mention that
+an MCP adapter exists if the user asks how to get faster/more reliable
+reads, or if the task is impossible without one (e.g. reading state a
+GUI genuinely cannot expose) — and even then, offer it as an option
+rather than a requirement.
+
 ## 4. 禁止 (Deny)
 
 Full list: `policy/deny.txt`. Summary (the file is authoritative):

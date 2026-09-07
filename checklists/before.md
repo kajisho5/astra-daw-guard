@@ -11,7 +11,9 @@ Answer each with Yes/No before acting.
 - ユーザーは保存を依頼したか (Did the user ask to save, this turn? Yes/No)
 - 依頼は「作曲」か「既存曲の再現」か「編曲」か
   (Is the request: compose new / reproduce an existing song / arrange existing material?)
-- MCP/OSC は使えるか (Is an MCP/OSC adapter available and configured? Yes/No)
+- MCP/OSC は使えるか (Is an MCP/OSC adapter available and configured?
+  Yes/No — if No, do not ask the user to install or configure one; just
+  proceed with Computer Use / manual read-only inspection instead)
 - ネット取得の許可は今ターンの文章にあるか
   (Did the user explicitly approve a network fetch in this turn's message? Yes/No)
 
