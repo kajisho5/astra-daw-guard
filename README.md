@@ -18,9 +18,9 @@ This is written for agents that can genuinely act on a real desktop —
 including ones with live screen perception and direct mouse/keyboard
 control (Computer Use), not just MCP/OSC calls. That is exactly why
 `SKILL.md`'s priority order matters: prefer an MCP/OSC adapter whenever
-one covers the action, fall back to read-only inspection when no
-adapter action is needed, and drop to Computer Use only when neither
-of those can do it. Computer Use means re-capturing and re-reasoning
+one covers the action; when the task does not require writing, use
+read-only inspection if it is sufficient; use Computer Use only when
+neither of those can do it. Computer Use means re-capturing and re-reasoning
 over a screenshot every turn — real, recurring token cost and latency,
 and far more fragile than one structured call — so this ordering isn't
 red tape, it is the cheaper and more reliable path whenever it's
