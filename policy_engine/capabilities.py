@@ -7,9 +7,15 @@ tests/test_policy_engine.py's CapabilityMatrixTests checks this stays in
 sync by parsing the actual server.py files, so a drift here fails CI
 instead of silently misleading `computer_use.invoke` decisions.
 
-Only read capabilities are modeled: none of astra-daw-guard's MCP
-servers implement any write tool, by design (see each mcp-*/README.md),
-so there is nothing to model on the write side.
+Only read capabilities are modeled here. `mcp-reaper` and `mcp-ableton`
+do now implement a small set of write tools (Issue #44) -- gated
+through `enforcement.enforce()`, not through this matrix -- but
+`computer_use.invoke`'s "is there an MCP read equivalent" check (the
+only consumer of CAPABILITY_MATRIX) has always been about read
+capability specifically, so write tools are deliberately out of scope
+for this file. Whether `computer_use.invoke` should also treat write
+capability as a reason to deny Computer Use is a separate, open
+question (see Issue #44's Non-goals) -- not answered by this matrix.
 """
 
 from __future__ import annotations

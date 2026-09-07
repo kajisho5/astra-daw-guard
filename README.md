@@ -42,31 +42,36 @@ provides a layer that can **decide and audit mechanically**.
 ## Supported DAWs
 
 The guardrail itself (`SKILL.md` / `policy/`) works identically across
-every DAW. In addition, some DAWs ship with a "read-only MCP" that can
-safely fetch tempo and track lists (no write operations are
-implemented anywhere).
+every DAW. In addition, some DAWs ship with an MCP that can safely
+fetch tempo and track lists. Reaper and Ableton Live also have a small
+set of write tools (track creation, MIDI writing, and — Reaper only —
+Save As); Ardour's MCP remains read-only. Every write tool is gated
+through the Policy Engine and Enforcement Boundary described above —
+see `mcp-reaper/README.md` / `mcp-ableton/README.md` for exactly what
+each tool does and does not do.
 
-| DAW | Read-only MCP | Transport | Verified against real hardware |
-|---|---|---|---|
-| Reaper | ✅ `mcp-reaper/` | [reapy](https://github.com/RomeoDespres/reapy) (external Python wrapper) | Not verified (logic-only verification) |
-| Ableton Live | ✅ `mcp-ableton/` | [AbletonOSC](https://github.com/ideoforms/AbletonOSC) (Remote Script) | Not verified (verified against a fake server) |
-| Ardour | ✅ `mcp-ardour/` | Ardour's own built-in OSC surface | Not verified (verified against a fake server) |
-| Bitwig Studio | Guardrail only (no MCP) | Reference: [DrivenByMoss](https://github.com/git-moss/DrivenByMoss)'s OSC support (community-made, use at your own risk) | Not investigated / not implemented (`adapters/bitwig.md`) |
-| FL Studio | Guardrail only (no MCP) | Reference: [`flstudio-mcp`](https://github.com/rosasynthesiz/flstudio-mcp) (community-made, use at your own risk) | Not investigated / not implemented (`adapters/flstudio.md`) |
-| Cubase | Guardrail only (no MCP) | — | Investigated: no readable surface due to platform constraints (`adapters/cubase.md`) |
-| Pro Tools | Guardrail only (no MCP) | — | Investigated: EUCON is Avid-partner-only, not generally available (`adapters/protools.md`) |
-| Logic Pro | Guardrail only (no MCP) | — | Investigated: no readable API/OSC exists (`adapters/logicpro.md`) |
-| Studio One | Guardrail only (no MCP) | — | Investigated: no public API/OSC exists (`adapters/studioone.md`) |
-| Cakewalk | Guardrail only (no MCP) | — | Investigated: no public API/OSC exists (`adapters/cakewalk.md`) |
-| GarageBand | Guardrail only (no MCP) | — | No scripting capability exists at all (`adapters/garageband.md`) |
+| DAW | MCP | Write tools | Transport | Verified against real hardware |
+|---|---|---|---|---|
+| Reaper | ✅ `mcp-reaper/` | ✅ create track / write MIDI / Save As | [reapy](https://github.com/RomeoDespres/reapy) (external Python wrapper) | Not verified (logic-only verification) |
+| Ableton Live | ✅ `mcp-ableton/` | ✅ create track / write MIDI | [AbletonOSC](https://github.com/ideoforms/AbletonOSC) (Remote Script) | Not verified (verified against a fake server) |
+| Ardour | ✅ `mcp-ardour/` | Read-only | Ardour's own built-in OSC surface | Not verified (verified against a fake server) |
+| Bitwig Studio | Guardrail only (no MCP) | — | Reference: [DrivenByMoss](https://github.com/git-moss/DrivenByMoss)'s OSC support (community-made, use at your own risk) | Not investigated / not implemented (`adapters/bitwig.md`) |
+| FL Studio | Guardrail only (no MCP) | — | Reference: [`flstudio-mcp`](https://github.com/rosasynthesiz/flstudio-mcp) (community-made, use at your own risk) | Not investigated / not implemented (`adapters/flstudio.md`) |
+| Cubase | Guardrail only (no MCP) | — | — | Investigated: no readable surface due to platform constraints (`adapters/cubase.md`) |
+| Pro Tools | Guardrail only (no MCP) | — | — | Investigated: EUCON is Avid-partner-only, not generally available (`adapters/protools.md`) |
+| Logic Pro | Guardrail only (no MCP) | — | — | Investigated: no readable API/OSC exists (`adapters/logicpro.md`) |
+| Studio One | Guardrail only (no MCP) | — | — | Investigated: no public API/OSC exists (`adapters/studioone.md`) |
+| Cakewalk | Guardrail only (no MCP) | — | — | Investigated: no public API/OSC exists (`adapters/cakewalk.md`) |
+| GarageBand | Guardrail only (no MCP) | — | — | No scripting capability exists at all (`adapters/garageband.md`) |
 
-The guardrail itself works the same on every DAW. Read-only MCPs
-currently exist for three of them — Reaper, Ableton Live, and Ardour —
-and none of the three has been verified against real hardware (logic
-has been verified against fake servers). The remaining DAWs were each
-investigated individually as of 2026-09-07, with the results recorded
-in `adapters/*.md`. Nothing here is exaggerated: where investigation
-found "this doesn't exist," that's stated plainly.
+The guardrail itself works the same on every DAW. MCPs currently exist
+for three DAWs — Reaper, Ableton Live, and Ardour — and none of the
+three has been verified against real hardware (logic has been verified
+against fake servers). Reaper's and Ableton Live's MCPs also have
+write tools now (Issue #44); Ardour's remains read-only. The remaining
+DAWs were each investigated individually as of 2026-09-07, with the
+results recorded in `adapters/*.md`. Nothing here is exaggerated:
+where investigation found "this doesn't exist," that's stated plainly.
 
 See `mcp-reaper/README.md` / `mcp-ableton/README.md` /
 `mcp-ardour/README.md` / `adapters/*.md` for setup details on each
@@ -135,16 +140,17 @@ With this repository open:
 
 ## Current status
 
-The latest version is `v0.9.1`. Both the Policy Engine
+The latest version is `v0.9.2`. Both the Policy Engine
 (`policy_engine/`) and the Enforcement Boundary (`enforcement/`) are
-implemented, with all 135 tests passing. See `CHANGELOG.md` for the
-full development history, and `ROADMAP.md` for the current assessment
-and what's next.
+implemented, with all 152 tests passing. Reaper and Ableton Live now
+have a small set of Policy-Engine-gated write tools (Issue #44); see
+`CHANGELOG.md` for the full development history, and `ROADMAP.md` for
+the current assessment and what's next.
 
 Honest limitations (not exaggerated): none of the following exist
-inside this repository — verification against real DAW hardware, a
-live connection into an actual Astra Agent runtime, or a write-capable
-MCP/OSC adapter. See `ROADMAP.md` for the reasoning and details.
+inside this repository — verification against real DAW hardware, or a
+live connection into an actual Astra Agent runtime. See `ROADMAP.md`
+for the reasoning and details.
 
 ## Contributing
 

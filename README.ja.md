@@ -39,29 +39,35 @@ MCPコレクションではありません。特定のDAWにも限定してい�
 ## 対応DAW
 
 ガードレール本体（`SKILL.md` / `policy/`）は全DAW共通で使えます。加えて、
-一部のDAWには「読み取り専用MCP」を同梱しており、テンポやトラック一覧を
-安全に取得できます（書き込み系の操作は一切実装していません）。
+一部のDAWにはMCPを同梱しており、テンポやトラック一覧を安全に取得
+できます。ReaperとAbleton Liveには小規模な書き込みツール（トラック
+作成・MIDI書き込み・[Reaperのみ]別名保存）もあります。Ardourの
+MCPは読み取り専用のままです。書き込みツールは全て上記のPolicy Engine /
+Enforcement Boundaryでゲートされています — 各ツールが正確に何をする・
+しないかは`mcp-reaper/README.md` / `mcp-ableton/README.md`を参照して
+ください。
 
-| DAW | 読み取り専用MCP | 経由するもの | 実機での動作確認 |
-|---|---|---|---|
-| Reaper | ✅ `mcp-reaper/` | [reapy](https://github.com/RomeoDespres/reapy)（外部Pythonラッパー） | 未確認（ロジック検証のみ） |
-| Ableton Live | ✅ `mcp-ableton/` | [AbletonOSC](https://github.com/ideoforms/AbletonOSC)（Remote Script） | 未確認（擬似サーバーで検証済み） |
-| Ardour | ✅ `mcp-ardour/` | Ardour本体に内蔵のOSCサーフェス | 未確認（擬似サーバーで検証済み） |
-| Bitwig Studio | ガードレールのみ（MCPなし） | 参考: [DrivenByMoss](https://github.com/git-moss/DrivenByMoss)のOSC機能（コミュニティ製・自己責任） | 未検証・未実装（`adapters/bitwig.md`） |
-| FL Studio | ガードレールのみ（MCPなし） | 参考: [`flstudio-mcp`](https://github.com/rosasynthesiz/flstudio-mcp)（コミュニティ製・自己責任） | 未検証・未実装（`adapters/flstudio.md`） |
-| Cubase | ガードレールのみ（MCPなし） | — | 調査済み: プラットフォーム側の制約で読み取り不可（`adapters/cubase.md`） |
-| Pro Tools | ガードレールのみ（MCPなし） | — | 調査済み: EUCONはAvidパートナー限定で一般利用不可（`adapters/protools.md`） |
-| Logic Pro | ガードレールのみ（MCPなし） | — | 調査済み: 読み取り可能なAPI/OSCなし（`adapters/logicpro.md`） |
-| Studio One | ガードレールのみ（MCPなし） | — | 調査済み: 公開API/OSCなし（`adapters/studioone.md`） |
-| Cakewalk | ガードレールのみ（MCPなし） | — | 調査済み: 公開API/OSCなし（`adapters/cakewalk.md`） |
-| GarageBand | ガードレールのみ（MCPなし） | — | スクリプト機能自体が無い（`adapters/garageband.md`） |
+| DAW | MCP | 書き込みツール | 経由するもの | 実機での動作確認 |
+|---|---|---|---|---|
+| Reaper | ✅ `mcp-reaper/` | ✅ トラック作成 / MIDI書き込み / 別名保存 | [reapy](https://github.com/RomeoDespres/reapy)（外部Pythonラッパー） | 未確認（ロジック検証のみ） |
+| Ableton Live | ✅ `mcp-ableton/` | ✅ トラック作成 / MIDI書き込み | [AbletonOSC](https://github.com/ideoforms/AbletonOSC)（Remote Script） | 未確認（擬似サーバーで検証済み） |
+| Ardour | ✅ `mcp-ardour/` | 読み取り専用 | Ardour本体に内蔵のOSCサーフェス | 未確認（擬似サーバーで検証済み） |
+| Bitwig Studio | ガードレールのみ（MCPなし） | — | 参考: [DrivenByMoss](https://github.com/git-moss/DrivenByMoss)のOSC機能（コミュニティ製・自己責任） | 未検証・未実装（`adapters/bitwig.md`） |
+| FL Studio | ガードレールのみ（MCPなし） | — | 参考: [`flstudio-mcp`](https://github.com/rosasynthesiz/flstudio-mcp)（コミュニティ製・自己責任） | 未検証・未実装（`adapters/flstudio.md`） |
+| Cubase | ガードレールのみ（MCPなし） | — | — | 調査済み: プラットフォーム側の制約で読み取り不可（`adapters/cubase.md`） |
+| Pro Tools | ガードレールのみ（MCPなし） | — | — | 調査済み: EUCONはAvidパートナー限定で一般利用不可（`adapters/protools.md`） |
+| Logic Pro | ガードレールのみ（MCPなし） | — | — | 調査済み: 読み取り可能なAPI/OSCなし（`adapters/logicpro.md`） |
+| Studio One | ガードレールのみ（MCPなし） | — | — | 調査済み: 公開API/OSCなし（`adapters/studioone.md`） |
+| Cakewalk | ガードレールのみ（MCPなし） | — | — | 調査済み: 公開API/OSCなし（`adapters/cakewalk.md`） |
+| GarageBand | ガードレールのみ（MCPなし） | — | — | スクリプト機能自体が無い（`adapters/garageband.md`） |
 
-ガードレール本体はどのDAWでも同じように使えます。読み取り専用MCPが
-あるのは今のところ Reaper・Ableton Live・Ardour の3つで、いずれも実機
-での疎通は未検証です（擬似サーバーでのロジック検証は実施済み）。他の
-DAWは2026-09-07時点で個別に調査し、結果を`adapters/*.md`に記録して
-います。誇張せず、調査済みで「無い」と分かったものは「無い」と明記して
-います。
+ガードレール本体はどのDAWでも同じように使えます。MCPがあるのは今の
+ところ Reaper・Ableton Live・Ardour の3つで、いずれも実機での疎通は
+未検証です（擬似サーバーでのロジック検証は実施済み）。ReaperとAbleton
+LiveのMCPには書き込みツールもあります（Issue #44）。Ardourは読み取り
+専用のままです。他のDAWは2026-09-07時点で個別に調査し、結果を
+`adapters/*.md`に記録しています。誇張せず、調査済みで「無い」と
+分かったものは「無い」と明記しています。
 
 各アダプタの詳細・セットアップ手順は `mcp-reaper/README.md` /
 `mcp-ableton/README.md` / `mcp-ardour/README.md` / `adapters/*.md` を
@@ -127,14 +133,15 @@ https://github.com/kajisho5/astra-daw-guard
 
 ## 現在の状態
 
-最新版は `v0.9.1`。Policy Engine（`policy_engine/`）・Enforcement
-Boundary（`enforcement/`）ともに実装済み、テスト135件全通過。詳しい
-開発の経緯は `CHANGELOG.md`、現状評価と今後の方針は `ROADMAP.md` を
-参照してください。
+最新版は `v0.9.2`。Policy Engine（`policy_engine/`）・Enforcement
+Boundary（`enforcement/`）ともに実装済み、テスト152件全通過。Reaperと
+Ableton LiveにはPolicy Engineでゲートされた書き込みツールが追加
+されました（Issue #44）。詳しい開発の経緯は `CHANGELOG.md`、現状評価と
+今後の方針は `ROADMAP.md` を参照してください。
 
 正直な限界（誇張しません）: 実機DAWでの動作確認・実際のAstra Agent
-runtimeへの結線・書き込み可能なMCP/OSCアダプタは、いずれもこの
-リポジトリの中には存在しません。理由と詳細は `ROADMAP.md` を参照。
+runtimeへの結線は、いずれもこのリポジトリの中には存在しません。
+理由と詳細は `ROADMAP.md` を参照。
 
 ## 貢献
 

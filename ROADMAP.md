@@ -26,27 +26,36 @@ GPT-6 Astra などのAIエージェントが DAW（Reaper / Ableton Live / Ardou
 - Computer Use のスクリーンクリック自動化を実装しない
 - 有料 MIDI 倉庫や著作権 MIDI のミラーを作らない
 - **汎用Agent Guard製品への改名・汎用化はしない。DAW専用のまま進める**
-- 書き込み可能なMCP/OSCアダプタを作らない（現状、`mcp-reaper` /
-  `mcp-ableton` / `mcp-ardour` はすべて読み取り専用。この境界は意図的で、
-  変更する場合は別途明確な合意が必要）
+- 新しいDAW/MCP/OSCアダプタを新規に追加しない（既存3アダプタの拡張とは別）
+
+**更新（2026-09-07、Issue #44）**: 「書き込み可能なMCP/OSCアダプタを
+作らない」という非目的は、リポジトリ所有者の明示的な合意によりReaper・
+Ableton Live限定で解除された。`mcp-ardour`は引き続き読み取り専用（対象外）。
+経緯は`CHANGELOG.md`・Issue #44参照。
 
 ## Current state（2026-09-07時点）
 
-- `main` HEAD: `b5965ae`
-- テスト: 135件、全通過（`python3 -m unittest discover -s tests -p "test_*.py" -v`）
+- `main` HEAD: `cc46e4a`（このPRのbase。マージ後さらに進む）
+- テスト: 152件、全通過（`python3 -m unittest discover -s tests -p "test_*.py" -v`）
 - GitHub Issues: #10, #12, #14, #16, #25, #26, #31, #34, #37, #38 は
   全てCLOSED（重複なし確認済み）。OPENのIssueは #32
   （リモートfeatureブランチの削除 — この実行環境のgit権限制限
   （`HTTP 403`）でセッション側からは対応不可、ユーザーの手動削除待ち）
-  のみ
+  と #44（本更新で実装、close予定）
 - ガードレール本体（`SKILL.md` / `policy/`）は全DAW共通
-- 読み取り専用MCP: Reaper / Ableton Live / Ardour の3つのみ、いずれも
-  実機未検証（擬似サーバーでのロジック検証のみ）
-- **書き込み可能なMCP/OSCツールは1つも存在しない**（`mcp-reaper` /
-  `mcp-ableton` / `mcp-ardour` の`@mcp.tool()`は全8関数とも読み取り専用）
+- MCP: Reaper / Ableton Live / Ardour の3つ、いずれも実機未検証
+  （擬似サーバーでのロジック検証のみ）
+- **書き込み可能なMCPツールがReaper / Ableton Liveに存在する**
+  （Issue #44）: `create_track` / `write_generated_midi`（両DAW）、
+  `save_project_as`（Reaperのみ、AbletonOSCにSave用アドレスが無いため）。
+  全て`enforcement.enforce()`経由でPolicy Engineの判定を必ず通してから
+  実行される。`mcp-ardour`は引き続き読み取り専用
 - Policy Engine（`policy_engine/`）と Enforcement Boundary
-  （`enforcement/`）が実装済み。ただし実際のAstra Agent runtimeとの
-  結線は無い（このリポジトリには実行中のAgentループが存在しないため）
+  （`enforcement/`）が実装済み。Enforcement Boundaryは今回初めて、
+  モック化されたテストダブルではなく実際のDAW書き込み経路
+  （fakeのreapy/OSCオブジェクト経由、実機未検証）に対して使われた。
+  ただし実際のAstra Agent runtimeとの結線は無い（このリポジトリには
+  実行中のAgentループが存在しないため）
 
 ## Completed（バージョン履歴の要約。詳細は CHANGELOG.md 参照）
 
@@ -62,7 +71,8 @@ GPT-6 Astra などのAIエージェントが DAW（Reaper / Ableton Live / Ardou
 | v0.7 | Enforcement Boundary（`enforcement/`、Tool実行そのものをゲート） | Issue #14, PR #15 |
 | v0.8 | Runtime Efficiency & UX Optimization（in-process優先、Capability分離、output最小化、セキュリティ回帰テスト、Audit separation、Approval/Failure UX、ベンチマーク、ドキュメント整理） | Issue #16, PR #17-#24 |
 | v0.9 | 次フェーズ監査、`evaluate_plan()`（計画の事前一括チェック）、`DAWStateSnapshot`（監査文脈用、判定ロジックは無変更） | Issue #25, #26, PR #27-#29 |
-| — | 自己レビュー・品質改善(新機能なし): CI test-discovery自動化、`policy_engine`のfail-closed型安全性バグ3件の発見・修正、`CONTRIBUTING.md`新設、`tools/benchmark.py`のゼロ反復クラッシュ修正、`mcp-ardour`の`query_list()`タイムアウト予算修正 | Issue #31, #34, #37, #38, PR #33, #35, #36, #39 |
+| v0.9.1 | 自己レビュー・品質改善(新機能なし): CI test-discovery自動化、`policy_engine`のfail-closed型安全性バグ3件の発見・修正、`CONTRIBUTING.md`新設、`tools/benchmark.py`のゼロ反復クラッシュ修正、`mcp-ardour`の`query_list()`タイムアウト予算修正、README/ROADMAP同期、READMEの英語化(看板)・`CHANGELOG.md`分離 | Issue #31, #34, #37, #38, PR #33, #35, #36, #39-#43 |
+| v0.9.2 | Reaper / Ableton Liveへの書き込み可能MCPツール追加（`create_track` / `write_generated_midi` / [Reaperのみ]`save_project_as`）。「書き込みアダプタを作らない」非目的を明示的合意により解除。Enforcement Boundaryを実際のDAW書き込み経路（fake経由、実機未検証）に初めて接続 | Issue #44 |
 
 ## 前回の監査フェーズ — 記録（2026-09-07実施）
 
@@ -91,6 +101,9 @@ B/D/E/Fは「今回不採用」であり「永久に不要」ではない。D/E/
 書き込み可能なMCP/OSCアダプタが将来追加された場合に再検討する（ただし
 非目的の通り、そのようなアダプタを積極的に作る計画は無い）。
 
+**2026-09-07追記**: この「将来」はIssue #44でReaper/Ableton Liveに
+限り実現した。D/E/Fの自動採用は意味しない（後述「非目的(恒久)」参照）。
+
 ## v0.9の実装結果
 
 - **Issue #25**(DAW state snapshot)・**Issue #26**(`evaluate_plan()`)
@@ -112,15 +125,40 @@ B/D/E/Fは「今回不採用」であり「永久に不要」ではない。D/E/
       への変更が無い
 - [x] README.md / ROADMAP.md が実装と同期している(このコミットで更新)
 
+## v0.9.2の実装結果（Issue #44、書き込みMCPツール）
+
+- **Issue #44**: `mcp-reaper`に`create_track` / `write_generated_midi` /
+  `save_project_as`、`mcp-ableton`に`create_track` / `write_generated_midi`
+  を追加。実装済み・PR番号は`CHANGELOG.md`参照
+- 全ての書き込みツールは`enforcement.enforce()`経由でしか実行できず、
+  DENY/未承認ASKの場合はreapy/AbletonOSCの呼び出しコードが一切実行
+  されないことを、fakeのProject/Track/Item/Take（Reaper）・fakeの
+  OSCクライアント（Ableton）を使ったテストで検証済み
+  （`tests/test_reaper_write_tools.py`・`tests/test_ableton_write_tools.py`）
+- `policy_engine/rules.py`のルール・順序、`policy/deny.txt` /
+  `policy/allow.txt`は無変更（`track.create` / `midi.write` /
+  `project.save`のルールは既存のものをそのまま使用）
+- `mcp-ardour`は無変更（対象外）
+- `save_project_as`はreapyの`Project.save(force_save_as=True)`ではなく
+  生の`reascript_api.Main_SaveProjectEx`を使用。前者はREAPERの
+  インタラクティブなSave Asダイアログを開くため無人実行できないことを
+  reapyのソースコードで確認した上での判断（`mcp-reaper/README.md`参照）
+- `mcp-ableton`側の書き込みは全てAbletonOSCの応答無しアドレスであることを
+  ソースコードで確認済み。書き込み直後の状態確認は再クエリのポーリング
+  （`_wait_until`）に依存しており、これは実機未検証（`mcp-ableton/README.md`参照）
+- テスト135→152件、全通過
+
 ## Next phase
 
-機能面で採用済み・未着手のIssueは無い。OPENのIssueは#32
-（リモートブランチ削除、環境のgit権限制限でセッション側からは対応
-不可）のみで、これはユーザーの手動対応待ち。次に何をやるかは、この
-リポジトリを再監査するか、ユーザーからの新しい要望を起点に決める。
-「候補を思いつきで実装する」ことはしない — 上記の監査と同じ規律
-(実装可能性・DAW固有価値・既存設計との整合性の検証、不要なものは
-不採用と明記)を毎回通すこと。エンジニアリング作業の進め方（ブランチ
+機能面で採用済み・未着手のIssueは無い（Issue #44は本更新で実装済み、
+close予定）。OPENのIssueは#32（リモートブランチ削除、環境のgit権限制限
+でセッション側からは対応不可）のみで、これはユーザーの手動対応待ち。
+次に何をやるかは、このリポジトリを再監査するか、ユーザーからの新しい
+要望を起点に決める。候補としては、上記「非目的(恒久)」に記載の通り
+D/E/Fの再評価（Reaper/Ableton Liveに書き込みアダプタができたことで
+前提が変わった）がある。「候補を思いつきで実装する」ことはしない —
+上記の監査と同じ規律(実装可能性・DAW固有価値・既存設計との整合性の検証、
+不要なものは不採用と明記)を毎回通すこと。エンジニアリング作業の進め方（ブランチ
 運用、PR粒度、squash-merge時のcommit message、`policy_engine/` /
 `enforcement/`変更時の独立レビュー必須化など）は`CONTRIBUTING.md`に
 分離して記録している。
@@ -128,11 +166,17 @@ B/D/E/Fは「今回不採用」であり「永久に不要」ではない。D/E/
 ## 非目的(恒久)
 
 - Risk Classificationのラベル追加(B、不採用 — 判定に影響しないラベルのみになるため)
-- Enforcement Boundaryの強化(D、対象が無いため不採用 — 再検討は書き込み可能なアダプタが追加された場合のみ)
-- Post-execution Verification(E、Dに依存するため不採用)
-- Provenanceの深い強化(F、書き込みアダプタが無いため不採用)
 - 汎用Agent Guardへの改名・汎用化
-- 新しいDAW/MCP/OSCアダプタの追加
+- 新しいDAW/MCP/OSCアダプタの追加（既存3アダプタの拡張とは別）
+
+**Issue #44により前提が一部変わったもの（未再評価・未決定）**: D
+(Enforcement Boundary hardening) / E (Post-execution Verification) /
+F (Provenance strengthening) は「ゲートすべき書き込み可能なアダプタが
+1つも無い」ことを理由に不採用としていたが、Reaper / Ableton Liveには
+今や書き込みツールが存在する（Ardourは対象外のまま）。これはD/E/Fを
+自動的に採用する理由にはならない — 改めて実装可能性・DAW固有価値・
+既存設計との整合性を検証してから判断すべきであり、今回のIssue #44では
+その再評価を行っていない。次に手を付けるなら、この3つを最初に検討する。
 
 ## History — 旧ROADMAP.md（v0.1構築手順書）の対応表
 

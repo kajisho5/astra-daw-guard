@@ -84,6 +84,21 @@ class OSCQueryClient:
             with self._lock:
                 self._queues.pop(address, None)
 
+    def send(self, address: str, *args: Any) -> None:
+        """Send `address` with `args` and return immediately, without
+        waiting for any reply.
+
+        Use this (never `query()`) for AbletonOSC addresses that mutate
+        state -- confirmed against AbletonOSC's own source
+        (abletonosc/handler.py's `_call_method`, and
+        abletonosc/clip.py's `clip_add_notes` handler) that these never
+        send an OSC reply, unlike the read (`get`) addresses `query()`
+        is for. `query()` would simply time out waiting for a reply
+        that is never coming. Callers that need to confirm a write
+        took effect must re-`query()` the resulting state afterward.
+        """
+        self._client.send_message(address, list(args))
+
     def close(self) -> None:
         self._server.shutdown()
         self._server.server_close()
