@@ -235,6 +235,42 @@ class DenyTests(unittest.TestCase):
         d = evaluate({})
         self.assertEqual(d.decision, DENY)
 
+    def test_non_dict_non_action_top_level_input_is_denied_not_a_crash(self):
+        # evaluate()'s own docstring promises it never raises for a
+        # malformed action -- that must hold for "malformed" in the
+        # broadest sense (wrong Python type entirely), not just "a
+        # dict with the wrong shape". Found by an adversarial review
+        # of this "authoritative, fail-closed" engine, since nothing
+        # previously exercised anything but dict input.
+        for bad_action in (None, "read.tempo", 123, [1, 2, 3], 4.5, True):
+            with self.subTest(bad_action=bad_action):
+                d = evaluate(bad_action)
+                self.assertEqual(d.decision, DENY)
+                self.assertEqual(d.rule_id, "INVALID_ACTION_SCHEMA")
+
+    def test_non_string_host_attribute_does_not_crash(self):
+        # midi.fetch's dump-site/allowlist checks used to call
+        # `.lower()` directly on the "host" attribute, which crashed
+        # for any non-string value instead of failing closed.
+        d = evaluate(
+            {"operation": "midi.fetch", "attributes": {"host": 123, "user_approved_this_turn": True}}
+        )
+        self.assertIn(d.decision, (ASK, DENY))  # never ALLOW for a garbage host
+
+    def test_non_string_daw_attribute_on_computer_use_does_not_crash(self):
+        d = evaluate({"operation": "computer_use.invoke", "attributes": {"daw": 123, "capability": "read.tempo"}})
+        self.assertIn(d.decision, (ALLOW, DENY))  # must not raise
+
+    def test_unhashable_capability_attribute_does_not_crash(self):
+        # mcp_supports() used CAPABILITY_MATRIX.get(operation, set())
+        # with `operation` taken directly from the "capability"
+        # attribute -- a list there is unhashable and used to raise
+        # TypeError instead of failing closed.
+        d = evaluate(
+            {"operation": "computer_use.invoke", "attributes": {"daw": "reaper", "capability": ["read.tempo"]}}
+        )
+        self.assertIn(d.decision, (ALLOW, DENY))  # must not raise
+
 
 class DecisionAuditabilityTests(unittest.TestCase):
     def test_decision_to_dict_has_all_audit_fields(self):

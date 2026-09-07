@@ -81,6 +81,20 @@ def evaluate(action: Union[dict, Action]) -> Decision:
                 target=str(raw.get("target", "")),
                 attributes=raw.get("attributes", {}) if isinstance(raw.get("attributes"), dict) else {},
             )
+    elif not isinstance(action, Action):
+        # Neither a dict nor an already-built Action -- e.g. None, a
+        # string, a list. This function's own docstring promises it
+        # never raises for a malformed action; that promise must hold
+        # for "malformed" in the broadest sense, not just "a dict with
+        # the wrong shape".
+        return Decision(
+            decision=DENY,
+            rule_id="INVALID_ACTION_SCHEMA",
+            reason=f"Action must be a dict or Action instance, got {type(action).__name__}.",
+            operation="",
+            target="",
+            attributes={},
+        )
 
     if action.operation not in KNOWN_OPERATIONS:
         return Decision(
