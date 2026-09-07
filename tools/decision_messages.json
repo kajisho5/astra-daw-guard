@@ -1,0 +1,102 @@
+{
+  "_note_en": "Bilingual, ready-to-say text for a policy_engine Decision, keyed by the Policy Engine's own `rule_id` (not by a separate slug like refusal_messages.json uses). `kind` is \"deny\" (a refusal) or \"ask\" (a confirmation prompt to put to the user) -- this file's whole reason to exist is covering ASK as well as DENY, since refusal_messages.json only covers DENY. Every DENY/ASK rule_id in policy_engine/rules.py's RULES, plus the three fail-closed rule_ids evaluate() can return (UNKNOWN_OPERATION, INVALID_ACTION_SCHEMA, NO_MATCHING_RULE), must have an entry here -- tests/test_decision_messages.py checks this stays in sync. Not auto-generated: update by hand when a rule_id is added, removed, or reclassified.",
+  "_note_ja": "policy_engineのDecisionにそのまま使える日英メッセージ集。refusal_messages.jsonの独自スラッグではなく、Policy Engine自身の`rule_id`をキーにしている。`kind`は\"deny\"（拒否）か\"ask\"（ユーザーへの確認プロンプト）。refusal_messages.jsonはDENYしか扱わないが、このファイルはASKも扱うのが存在意義。policy_engine/rules.pyのRULESにあるDENY/ASKの全rule_id、およびevaluate()が返しうる3つのfail-closed rule_id（UNKNOWN_OPERATION, INVALID_ACTION_SCHEMA, NO_MATCHING_RULE）は、必ずここにエントリを持つこと（tests/test_decision_messages.pyで同期を確認）。自動生成ではないので、rule_idの追加・削除・分類変更があれば手動更新すること。",
+  "messages": [
+    {
+      "rule_id": "MIDI_DUMP_SITE",
+      "kind": "deny",
+      "en": "I can't fetch that MIDI from the open web (BitMidi/MIDIWorld/Free MIDI and similar dump sites are off-limits regardless of approval). I can compose a new part in the same style, or use a file you provide directly.",
+      "ja": "そのMIDIは無断MIDI倉庫サイト（BitMidi・MIDIWorld・Free MIDIなど）からは取得できません。許可があっても対象外です。似た雰囲気のフレーズを新規作曲するか、ファイルを直接渡してください。"
+    },
+    {
+      "rule_id": "MIDI_FETCH_NO_APPROVAL",
+      "kind": "deny",
+      "en": "I can't fetch a MIDI file from the web without your explicit approval in this message. Tell me the exact URL and confirm you want it fetched, or I can compose a new part instead.",
+      "ja": "このターンで明示的な許可がない限り、MIDIファイルをネットから取得できません。取得先URLを明示して許可するか、代わりに新規に作曲することもできます。"
+    },
+    {
+      "rule_id": "PROJECT_OVERWRITE",
+      "kind": "deny",
+      "en": "I won't overwrite the open project. If you'd like me to save, I'll use Save As with a new, timestamped filename.",
+      "ja": "開いているプロジェクトを上書き保存しません。保存が必要であれば、タイムスタンプ付きの新規ファイル名で Save As します。"
+    },
+    {
+      "rule_id": "UNLABELED_MIXED_SOURCES",
+      "kind": "deny",
+      "en": "I won't combine generated and imported material on the same track without labeling where each part came from.",
+      "ja": "生成した素材と外部から取り込んだ素材を、出典を明記せずに同じトラックへ混ぜません。"
+    },
+    {
+      "rule_id": "WINDOW_MANIPULATION",
+      "kind": "deny",
+      "en": "I won't move, resize, or retile the DAW's windows.",
+      "ja": "DAWのウィンドウを最小化・移動・再配置しません。"
+    },
+    {
+      "rule_id": "DISPLAY_SETTINGS_CHANGE",
+      "kind": "deny",
+      "en": "I won't change the display zoom, color theme, or key bindings.",
+      "ja": "表示倍率・配色テーマ・キー割り当てを変更しません。"
+    },
+    {
+      "rule_id": "PLUGIN_OR_LICENSE_DIALOG",
+      "kind": "deny",
+      "en": "I won't install plugins or content packs, or respond to license/activation dialogs on your behalf.",
+      "ja": "プラグインやコンテンツパックのインストール、ライセンス/アクティベーションダイアログへの応答はしません。"
+    },
+    {
+      "rule_id": "SEND_UNPUBLISHED_EXTERNALLY",
+      "kind": "deny",
+      "en": "I won't send your project file, stems, or unpublished songs anywhere except the model API already in use for this session.",
+      "ja": "プロジェクトファイル・ステム・未公開の楽曲を、このセッションで既に使っているモデルAPI以外の送信先には送りません。"
+    },
+    {
+      "rule_id": "COMPUTER_USE_WHEN_MCP_AVAILABLE",
+      "kind": "deny",
+      "en": "I'll use the available MCP/OSC adapter for this instead of Computer Use, since it can do the same thing.",
+      "ja": "同じ操作ができるMCP/OSCアダプタがある場合、Computer Useではなくそちらを使います。"
+    },
+    {
+      "rule_id": "GENERATED_MIDI_INTO_OTHER_TRACK",
+      "kind": "deny",
+      "en": "I can't write generated MIDI into that track. Generated material only goes into a new track named with the GEN- prefix, so I'll create one instead.",
+      "ja": "生成したMIDIをそのトラックには書き込めません。生成物はGEN-で始まる新規トラックにのみ書き込むため、新規トラックを作成します。"
+    },
+    {
+      "rule_id": "UNKNOWN_OPERATION",
+      "kind": "deny",
+      "en": "I don't recognize this as a defined operation, so I'm declining it rather than guessing whether it's safe.",
+      "ja": "この操作はPolicy Engineが認識できない未定義の操作のため、安全かどうか推測せずに拒否します。"
+    },
+    {
+      "rule_id": "INVALID_ACTION_SCHEMA",
+      "kind": "deny",
+      "en": "I couldn't describe this action in the structured form the Policy Engine requires, so I'm declining it rather than proceeding without a check.",
+      "ja": "この操作をPolicy Engineが要求する構造化された形式で記述できなかったため、チェックせずに進めることはせず拒否します。"
+    },
+    {
+      "rule_id": "NO_MATCHING_RULE",
+      "kind": "deny",
+      "en": "This operation is known, but nothing in policy covers this exact combination of details, so I'm declining it rather than assuming it's fine.",
+      "ja": "この操作自体は既知ですが、この具体的な組み合わせをカバーするポリシーが無いため、問題ないと決めつけずに拒否します。"
+    },
+    {
+      "rule_id": "MIDI_FETCH_NOT_ALLOWLISTED",
+      "kind": "ask",
+      "en": "Before I fetch this, can you confirm its license? The host isn't on the pre-approved license allowlist, so I can't treat \"public domain\" as proven on its own.",
+      "ja": "取得する前にライセンスを確認させてください。このホストは事前承認済みのライセンス許可リストに無いため、「パブリックドメイン」という表示だけでは信頼できません。"
+    },
+    {
+      "rule_id": "SAVE_AS_UNCONFIRMED",
+      "kind": "ask",
+      "en": "Should I save this? If so, I'll use Save As with a new, timestamped filename -- I won't overwrite the currently open project.",
+      "ja": "保存してよろしいですか？保存する場合は、タイムスタンプ付きの新規ファイル名でSave Asします。開いているプロジェクトを上書きすることはありません。"
+    },
+    {
+      "rule_id": "CREATE_OTHER_TRACK",
+      "kind": "ask",
+      "en": "You're asking me to create a track that isn't for generated content (which would normally get a GEN- prefix). Can you confirm the name and purpose of this track before I create it?",
+      "ja": "生成コンテンツ用（通常はGEN-接頭辞）ではないトラックの作成を依頼されています。作成前に、このトラックの名前と用途を確認させてください。"
+    }
+  ]
+}

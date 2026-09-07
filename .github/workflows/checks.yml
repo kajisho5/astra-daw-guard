@@ -33,12 +33,13 @@ jobs:
       - name: Byte-compile enforcement/*.py
         run: python3 -m py_compile enforcement/*.py
 
-      - name: Run policy_engine, enforcement, cli, security regression, audit separation, and benchmark tests
-        run: python3 -m unittest tests.test_policy_engine tests.test_enforcement tests.test_cli tests.test_security_regression tests.test_audit_separation tests.test_benchmark -v
+      - name: Run policy_engine, enforcement, cli, security regression, audit separation, decision message, and benchmark tests
+        run: python3 -m unittest tests.test_policy_engine tests.test_enforcement tests.test_cli tests.test_security_regression tests.test_audit_separation tests.test_decision_messages tests.test_benchmark -v
 
       - name: Validate JSON files parse
         run: |
           python3 -c "import json; json.load(open('tools/refusal_messages.json'))"
+          python3 -c "import json; json.load(open('tools/decision_messages.json'))"
           python3 -c "import json; json.load(open('sources/sources.example.json'))"
 
       - name: refusal_messages.json must match policy/deny.txt 1:1
