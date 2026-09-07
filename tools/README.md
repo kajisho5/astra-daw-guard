@@ -53,6 +53,36 @@ python3 tools/refusal_message.py no_overwrite_save --lang ja
 `policy/deny.txt` の文言を変更した場合、`refusal_messages.json` 内の
 対応するエントリも手動で更新してください（自動生成ではありません）。
 
+## `decision_messages.json` / `decision_message.py` — Decision向けメッセージ辞書（Issue [#16](https://github.com/kajisho5/astra-daw-guard/issues/16)、Approval UX / Failure UX）
+
+`refusal_messages.json`が独自スラッグでDENYのみを扱うのに対し、
+こちらは`policy_engine`自身の`rule_id`（`evaluate(action).rule_id`）を
+そのままキーにし、**ASK（確認プロンプト）もDENY（拒否文）も両方**
+カバーします。`policy_engine`/`enforcement`経由で動いているAgentは
+こちらを使ってください。
+
+```bash
+python3 tools/decision_message.py --list
+python3 tools/decision_message.py PROJECT_OVERWRITE
+python3 tools/decision_message.py SAVE_AS_UNCONFIRMED --lang ja
+```
+
+```python
+from policy_engine import evaluate
+from tools.decision_message import message_for_decision
+
+decision = evaluate(action)
+if decision.decision != "ALLOW":
+    print(message_for_decision(decision, lang="en"))
+```
+
+`decision_messages.json`にまだ載っていない`rule_id`が来た場合は、
+クラッシュせず`decision.reason`（英語のみ）にフォールバックします。
+`policy_engine/rules.py`のDENY/ASKルール、および`evaluate()`が返しうる
+fail-closed時の3つのrule_id（`UNKNOWN_OPERATION`/
+`INVALID_ACTION_SCHEMA`/`NO_MATCHING_RULE`）が全てカバーされている
+ことは`tests/test_decision_messages.py`で確認済みです。
+
 ## 動作確認について
 
 このセッションで実際に Python 3 で実行し、想定通りの入出力になることを

@@ -113,9 +113,10 @@ Full list: `policy/allow.txt`. Summary:
   checked with `tools/deny_check.py` (a non-authoritative keyword
   heuristic — see its own docstring for why it's not a substitute for
   `policy_engine/`). If you fetched a file, record it with
-  `tools/record_source.py` (see `sources/README.md`). For a consistent
-  refusal message in English or Japanese, `tools/refusal_message.py
-  --list` shows the available rule ids.
+  `tools/record_source.py` (see `sources/README.md`). For consistent,
+  bilingual wording for an ASK confirmation or a DENY refusal, look up
+  `decision.rule_id` in `tools/decision_message.py` (`--list` shows the
+  covered ids; falls back to `decision.reason` if not yet cataloged).
 - **After**: fill out the report in `checklists/after.md` using the format
   in Section 7 below, every time, even if nothing was changed.
 
