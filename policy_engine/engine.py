@@ -17,8 +17,10 @@ never ALLOW. "Could not determine" is not a reason to proceed.
 
 from __future__ import annotations
 
+import dataclasses
 from typing import Union
 
+from .capabilities import mcp_supports
 from .rules import DENY, RULES, Decision
 from .schema import Action, ActionSchemaError
 
@@ -41,6 +43,20 @@ KNOWN_OPERATIONS = {
     "data.send_external",
     "computer_use.invoke",
 }
+
+
+def _attach_capability_note(action: Action, decision: Decision) -> Decision:
+    """Set `Decision.capability_available` for read.* Actions that name a
+    DAW — see rules.Decision's docstring for why this is deliberately
+    separate from `decision`/`rule_id`. Every other Action is returned
+    unchanged (capability_available stays None: not applicable).
+    """
+    if not action.operation.startswith("read."):
+        return decision
+    daw = action.attr("daw")
+    if not daw:
+        return decision
+    return dataclasses.replace(decision, capability_available=mcp_supports(daw, action.operation))
 
 
 def evaluate(action: Union[dict, Action]) -> Decision:
@@ -83,7 +99,7 @@ def evaluate(action: Union[dict, Action]) -> Decision:
     for rule in RULES:
         decision = rule.evaluate(action)
         if decision is not None:
-            return decision
+            return _attach_capability_note(action, decision)
 
     # A known operation that no rule matched (e.g. missing/invalid
     # attributes for that operation's decision logic): also fail closed.
