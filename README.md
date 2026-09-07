@@ -285,3 +285,40 @@ Astraのトークン数・再読込み挙動）を明確に分けた上で、承
   原理的に計測できず、一度も「測定済み」として扱っていない
 - このフェーズも実機DAW・実際のAstra runtimeとの結線は対象外
   （v0.7までと同様）
+
+## v0.9（次フェーズ再設計・監査 — ROADMAP.md参照）
+
+`ROADMAP.md`がv0.1構築時の手順書のまま放置され、Policy Engine
+（v0.5）・Enforcement Boundary（v0.7）・v0.8の内容を反映していなかった
+ため、リポジトリ全体を実際に再監査し、状況ドキュメントとして書き直した。
+その上で次フェーズの候補6つ（DAW State Awareness / Risk Classification
+/ Plan・Dry Run / Enforcement Boundary hardening / Post-execution
+Verification / Provenance strengthening）を実装可能性・DAW固有価値・
+既存設計との整合性で検証し、採用したものだけを実装した。
+
+- [x] ROADMAP.md全面改訂（状況ドキュメント化）、AGENTS.mdの古い記述修正
+- [x] `evaluate_plan()` / `plan_is_clear()` / `worst_decision()`
+      （Issue [#26](https://github.com/kajisho5/astra-daw-guard/issues/26)、
+      PR [#28](https://github.com/kajisho5/astra-daw-guard/pull/28)） —
+      複数Actionからなる計画を実行前にまとめて事前チェックできる、
+      既存`evaluate()`のステートレスな薄いラッパー。CLIに`--plan`
+      モードも追加。Action間の依存関係は一切推論しない
+- [x] `DAWStateSnapshot`（Issue [#25](https://github.com/kajisho5/astra-daw-guard/issues/25)、
+      PR [#29](https://github.com/kajisho5/astra-daw-guard/pull/29)） —
+      Actionが提案された時点のDAW状態を`attributes["daw_state"]`に
+      構造化して残すヘルパー。`from_reaper()`/`from_ableton()`/
+      `from_ardour()`は各MCPの実際のツール戻り値の形からそのまま構築
+      （希望的観測なし）。**Policy判定は一切変更しない** — 新しい
+      `policy/deny.txt`/`allow.txt`由来のルールは追加していない
+- [x] 不採用と判断したもの: Risk Classification（判定に影響しない
+      ラベルのみになるため）、Enforcement Boundary hardening / 
+      Post-execution Verification / Provenance強化（いずれも、
+      ゲート・比較・追跡すべき書き込み可能なMCP/OSCアダプタが
+      リポジトリ内に1つも存在しないため対象が無い — 理由は
+      `ROADMAP.md`参照）
+
+`policy_engine/rules.py`のルール・順序、`policy/deny.txt` /
+`policy/allow.txt`、`mcp-reaper` / `mcp-ableton` / `mcp-ardour`、
+`enforcement/boundary.py`は今回も一切変更していない。テストは
+97件→127件（全通過）。実機DAW・実際のAstra runtimeとの結線は今回も
+対象外。

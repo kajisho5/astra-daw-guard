@@ -32,13 +32,13 @@ GPT-6 Astra などのAIエージェントが DAW（Reaper / Ableton Live / Ardou
 
 ## Current state（2026-09-07時点）
 
-- `main` HEAD: `b4dc98f`
-- テスト: 97件、全通過（`python3 -m unittest tests.test_policy_engine
+- `main` HEAD: `72b63ae`
+- テスト: 127件、全通過（`python3 -m unittest tests.test_policy_engine
   tests.test_enforcement tests.test_cli tests.test_security_regression
   tests.test_audit_separation tests.test_decision_messages
-  tests.test_benchmark -v`）
-- GitHub Issues: #10, #12, #14, #16 は全てCLOSED（重複なし確認済み）。
-  #25, #26 が新規OPEN（本ロードマップ更新時に作成、詳細は後述）
+  tests.test_benchmark tests.test_evaluate_plan tests.test_daw_state -v`）
+- GitHub Issues: #10, #12, #14, #16, #25, #26 は全てCLOSED（重複なし確認済み）。
+  OPENのIssueは無し
 - ガードレール本体（`SKILL.md` / `policy/`）は全DAW共通
 - 読み取り専用MCP: Reaper / Ableton Live / Ardour の3つのみ、いずれも
   実機未検証（擬似サーバーでのロジック検証のみ）
@@ -61,8 +61,9 @@ GPT-6 Astra などのAIエージェントが DAW（Reaper / Ableton Live / Ardou
 | v0.6 | Policy Engineを`checklists/during.md`の具体的な呼び出し手順に統合 | Issue #12, PR #13 |
 | v0.7 | Enforcement Boundary（`enforcement/`、Tool実行そのものをゲート） | Issue #14, PR #15 |
 | v0.8 | Runtime Efficiency & UX Optimization（in-process優先、Capability分離、output最小化、セキュリティ回帰テスト、Audit separation、Approval/Failure UX、ベンチマーク、ドキュメント整理） | Issue #16, PR #17-#24 |
+| v0.9 | 次フェーズ監査、`evaluate_plan()`（計画の事前一括チェック）、`DAWStateSnapshot`（監査文脈用、判定ロジックは無変更） | Issue #25, #26, PR #27-#29 |
 
-## Current phase — 次フェーズ再設計・監査（このコミット）
+## 前回の監査フェーズ — 記録（2026-09-07実施）
 
 ユーザー指示により、以下を実施：
 
@@ -89,35 +90,43 @@ B/D/E/Fは「今回不採用」であり「永久に不要」ではない。D/E/
 書き込み可能なMCP/OSCアダプタが将来追加された場合に再検討する（ただし
 非目的の通り、そのようなアダプタを積極的に作る計画は無い）。
 
-## Next phase — Issue #25, #26
+## v0.9の実装結果
 
-- **Issue #25**: DAW状態スナップショットのスキーマ追加（Audit文脈用、
-  判定ロジックは変更しない）
-- **Issue #26**: `evaluate_plan()` — 複数Actionの事前一括チェック
-  （dry-run、既存`evaluate()`の薄いラッパー、クロスAction推論はしない）
+- **Issue #25**(DAW state snapshot)・**Issue #26**(`evaluate_plan()`)
+  ともに実装完了・PR #28, #29でマージ済み・クローズ済み
+- `policy_engine/rules.py`のルール・順序、`policy/deny.txt` /
+  `policy/allow.txt`、`mcp-reaper` / `mcp-ableton` / `mcp-ardour`、
+  `enforcement/boundary.py`は今回も一切変更していない(各PRで
+  `git diff`により確認済み)
+- テスト97→127件、全通過
 
-両Issueとも、実装前に必ず本文のNon-goalsを守ること。特にIssue #25は
-「新しいpolicy判定ルールを追加しない」が最重要の制約。
+## Definition of Done(v0.9・達成済み)
 
-## Definition of Done（次フェーズ）
-
-- [ ] Issue #25の受け入れ基準を全て満たす
-- [ ] Issue #26の受け入れ基準を全て満たす
-- [ ] 既存テスト（97件）が無傷で通過し続ける
-- [ ] `policy/deny.txt` / `policy/allow.txt` / 既存ルールのALLOW/ASK/DENY
+- [x] Issue #25の受け入れ基準を全て満たす
+- [x] Issue #26の受け入れ基準を全て満たす
+- [x] 既存テスト(97件)が無傷で通過し続ける(+30件追加、計127件)
+- [x] `policy/deny.txt` / `policy/allow.txt` / 既存ルールのALLOW/ASK/DENY
       判定結果が一切変わらない
-- [ ] `mcp-reaper` / `mcp-ableton` / `mcp-ardour` / `enforcement/boundary.py`
-      への変更が無い（今回のスコープでは書き込み対象が無いため）
-- [ ] README.md / ROADMAP.md が実装と同期している
+- [x] `mcp-reaper` / `mcp-ableton` / `mcp-ardour` / `enforcement/boundary.py`
+      への変更が無い
+- [x] README.md / ROADMAP.md が実装と同期している(このコミットで更新)
 
-## 非目的（このフェーズ限定）
+## Next phase
 
-- Risk Classificationのラベル追加（B、不採用）
-- Enforcement Boundaryの強化（D、対象が無いため不採用）
-- Post-execution Verification（E、Dに依存するため不採用）
-- Provenanceの深い強化（F、書き込みアダプタが無いため不採用）
-- 汎用Agent Guardへの改名・汎用化（恒久的な非目的）
-- 新しいDAW/MCP/OSCアダプタの追加（恒久的な非目的）
+現時点で採用済み・未着手のIssueは無い(OPENのIssueなし)。次に何を
+やるかは、このリポジトリを再監査するか、ユーザーからの新しい要望を
+起点に決める。「候補を思いつきで実装する」ことはしない — 上記の監査
+と同じ規律(実装可能性・DAW固有価値・既存設計との整合性の検証、不要な
+ものは不採用と明記)を毎回通すこと。
+
+## 非目的(恒久)
+
+- Risk Classificationのラベル追加(B、不採用 — 判定に影響しないラベルのみになるため)
+- Enforcement Boundaryの強化(D、対象が無いため不採用 — 再検討は書き込み可能なアダプタが追加された場合のみ)
+- Post-execution Verification(E、Dに依存するため不採用)
+- Provenanceの深い強化(F、書き込みアダプタが無いため不採用)
+- 汎用Agent Guardへの改名・汎用化
+- 新しいDAW/MCP/OSCアダプタの追加
 
 ## History — 旧ROADMAP.md（v0.1構築手順書）の対応表
 
