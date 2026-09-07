@@ -14,6 +14,17 @@ whatever MCP / OSC / Computer Use tooling already exists — this
 repository is the "what's allowed, what isn't" layer that sits around
 that.
 
+This is written for agents that can genuinely act on a real desktop —
+including ones with live screen perception and direct mouse/keyboard
+control (Computer Use), not just MCP/OSC calls. That is exactly why
+`SKILL.md`'s priority order matters: prefer an MCP/OSC adapter whenever
+one covers the action, and drop to Computer Use only when nothing else
+can do it. Computer Use means re-capturing and re-reasoning over a
+screenshot every turn — real, recurring token cost and latency, and far
+more fragile than one structured call — so this ordering isn't
+red tape, it is the cheaper and more reliable path whenever it's
+available.
+
 Enforcement is two-layered. `SKILL.md` is a natural-language layer an
 agent reads and follows (also readable by humans), and `policy_engine/`
 is a **machine-readable ALLOW/ASK/DENY decision engine** (structured
