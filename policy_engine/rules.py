@@ -131,7 +131,7 @@ RULES: list[Rule] = [
         decision=DENY,
         reason="MIDI/sample fetch without explicit user approval in this turn.",
         source_text="Do not download .mid .midi .kar files without explicit user approval in this turn.",
-        predicate=lambda a: a.operation == "midi.fetch" and not a.attr("user_approved_this_turn", False),
+        predicate=lambda a: a.operation == "midi.fetch" and a.attr("user_approved_this_turn") is not True,
     ),
     Rule(
         rule_id="MIDI_FETCH_NOT_ALLOWLISTED",
@@ -143,7 +143,7 @@ RULES: list[Rule] = [
         source_text='Do not treat "public domain" as proven unless the URL is on license-allowlist.txt.',
         predicate=lambda a: (
             a.operation == "midi.fetch"
-            and a.attr("user_approved_this_turn", False)
+            and a.attr("user_approved_this_turn") is True
             and not _host_on_license_allowlist(a.attr("host", ""))
         ),
     ),
@@ -154,7 +154,7 @@ RULES: list[Rule] = [
         source_text="Fetch a file only when: user named the URL in this turn AND the host is on license-allowlist.txt.",
         predicate=lambda a: (
             a.operation == "midi.fetch"
-            and a.attr("user_approved_this_turn", False)
+            and a.attr("user_approved_this_turn") is True
             and _host_on_license_allowlist(a.attr("host", ""))
         ),
     ),
@@ -176,7 +176,7 @@ RULES: list[Rule] = [
         predicate=lambda a: (
             a.operation == "project.save"
             and a.attr("mode") == "save_as"
-            and a.attr("user_requested_this_turn", False)
+            and a.attr("user_requested_this_turn") is True
         ),
     ),
     Rule(

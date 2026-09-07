@@ -73,6 +73,7 @@ Ableton Live限定で解除された。`mcp-ardour`は引き続き読み取り�
 | v0.9 | 次フェーズ監査、`evaluate_plan()`（計画の事前一括チェック）、`DAWStateSnapshot`（監査文脈用、判定ロジックは無変更） | Issue #25, #26, PR #27-#29 |
 | v0.9.1 | 自己レビュー・品質改善(新機能なし): CI test-discovery自動化、`policy_engine`のfail-closed型安全性バグ3件の発見・修正、`CONTRIBUTING.md`新設、`tools/benchmark.py`のゼロ反復クラッシュ修正、`mcp-ardour`の`query_list()`タイムアウト予算修正、README/ROADMAP同期、READMEの英語化(看板)・`CHANGELOG.md`分離 | Issue #31, #34, #37, #38, PR #33, #35, #36, #39-#43 |
 | v0.9.2 | Reaper / Ableton Liveへの書き込み可能MCPツール追加（`create_track` / `write_generated_midi` / [Reaperのみ]`save_project_as`）。「書き込みアダプタを作らない」非目的を明示的合意により解除。Enforcement Boundaryを実際のDAW書き込み経路（fake経由、実機未検証）に初めて接続 | Issue #44 |
+| v0.9.2.1 | 認可バイパスの修正（新機能なし）: `MIDI_FETCH_NO_APPROVAL`/`MIDI_FETCH_NOT_ALLOWLISTED`/`MIDI_FETCH_ALLOWED`/`SAVE_AS_APPROVED`の4ルールがtruthinessチェックで書かれており、`"false"`（Pythonではtruthy）等を渡すと意図しないASK/ALLOWに漏れる欠陥（CWE-863）を発見・修正 | — |
 
 ## 前回の監査フェーズ — 記録（2026-09-07実施）
 
