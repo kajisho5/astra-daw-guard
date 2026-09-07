@@ -87,3 +87,11 @@ v0.1 はドキュメントのみです。コード・依存パッケージ・テ
 - [x] 日本語 / 英語の拒否メッセージ辞書 — `tools/refusal_messages.json`
       + `tools/refusal_message.py`。`policy/deny.txt` の10ルールと
       1対1対応していることを確認済み
+
+## v0.3（進行中、ROADMAP.md には無い追加項目）
+
+- [x] Ableton Live 読み取り専用 MCP（テンポ、トラック一覧） —
+      `mcp-ableton/` に実装。[AbletonOSC](https://github.com/ideoforms/AbletonOSC)
+      経由。OSCアドレスは一次ソースで確認済み、往復ロジックは
+      擬似AbletonOSCサーバーで検証済みだが、実機の Ableton Live では
+      未検証（詳細は `mcp-ableton/README.md`）

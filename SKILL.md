@@ -112,11 +112,13 @@ Failures:
 
 ## 8. DAW別の注意 (Per-DAW notes — details in adapters/)
 
-- **Ableton**: unofficial bridges exist (see `adapters/ableton.md`). Read
-  this guard before using any of them. No official public LiveAPI network
-  bridge is confirmed as of this writing.
-- **Reaper**: ReaScript can read/write projects directly. Until a
-  dedicated MCP exists, allow only reading and adding new tracks — see
+- **Ableton**: this repo's own read-only adapter (`mcp-ableton/`, via
+  AbletonOSC) covers tempo/tracks — see `adapters/ableton.md`. Beyond
+  that, only unofficial bridges exist; read this guard before using any
+  of them.
+- **Reaper**: this repo's own read-only adapter (`mcp-reaper/`, via
+  reapy) covers tempo/tracks. Beyond that, ReaScript can read/write
+  directly — allow only reading and adding new tracks — see
   `adapters/reaper.md`.
 - **Cubase**: automation API is limited; most control goes through
   Computer Use. Never touch save dialogs or window layout — see
