@@ -192,3 +192,35 @@ Policy Engineが「あるだけで呼ばれない」状態を避けるため、A
 - [x] `policy_engine/`のロジック・テストは無変更（既存35テスト継続通過）
 - [x] コード実行できない環境のAgent向けに、`policy/deny.txt`への
       フォールバック手順も明記（Policy Engineが使えない場合の代替）
+
+## v0.7（Enforcement Boundary — Issue [#14](https://github.com/kajisho5/astra-daw-guard/issues/14)）
+
+v0.6までは「Agentがpolicy_engineを呼ぶ手順」だった。これは文書上の
+お願いであり、Agentがバイパスして直接Toolを呼ぶことを技術的には
+防げない。`enforcement/`はこれに対応する、**Tool実行そのものを
+Policy Engineの判定でゲートする**参照実装。詳細は`enforcement/README.md`。
+
+- [x] `enforcement.enforce(action, tool, approved=False, audit_log=None)`
+      — ALLOWで実行、ASKは未承認なら`ApprovalRequired`で実行させない、
+      DENYは`approved`の値に関わらず常に`ToolDenied`で実行させない
+- [x] `@enforcement.guarded`デコレータで既存Tool関数を宣言的に包める
+- [x] テスト16件 — 「DENYされたToolは一度も呼ばれない」ことを
+      `policy/deny.txt`の10パターン全てで検証、「`approved=True`でも
+      DENYはオーバーライドされない」ことも明示的に検証。既存35テストと
+      合わせて計51件、全て通過
+- [x] 承認はAction単位（グローバルな承認状態を持たない）
+- [x] 例外は`policy_engine.Decision`をそのまま保持（独自の曖昧な
+      エラーに変換しない）
+
+**正直な限界（誇張しない）**:
+
+- **Astra自身のAgent runtimeへの実接続ではない。** このリポジトリには
+  実行中のAgentループが存在しないため、「Astra runtime統合済み」とは
+  書かない。これは「どんなPythonコードからでも使える参照実装」であり、
+  将来実際のAgent実行環境がこのリポジトリをインポートして使うための
+  土台
+- 既存の`mcp-reaper` / `mcp-ableton` / `mcp-ardour`の読み取り専用ツールは
+  **変更していない**。理由: 全ツールが`policy_engine`上常にALLOWになる
+  ため、Enforcementを追加してもDENY/ASKパスが一度も発火せず実演に
+  ならない。かつ実機未検証のコードに不要な変更を加えるリスクを避けた
+- 実機DAWでの確認は対象外（従来通り）

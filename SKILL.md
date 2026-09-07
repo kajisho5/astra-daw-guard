@@ -105,7 +105,10 @@ Full list: `policy/allow.txt`. Summary:
   (see `policy_engine/README.md`) and check `evaluate(action).decision`
   — ALLOW means proceed, ASK means confirm with the user first, DENY
   means do not perform it (record it under "Denied actions"). This is
-  authoritative, not a heuristic. If `policy_engine/` isn't available,
+  authoritative, not a heuristic. If you can call code, prefer
+  `enforcement.enforce()`/`@guarded` (`enforcement/README.md`) so a
+  DENY blocks the tool call itself, not just your own judgment call.
+  If `policy_engine/` isn't available,
   fall back to reading `policy/deny.txt` yourself, optionally sanity-
   checked with `tools/deny_check.py` (a non-authoritative keyword
   heuristic — see its own docstring for why it's not a substitute for
