@@ -134,6 +134,10 @@ def main() -> int:
         "--cli-iterations", type=int, default=20, help="Iterations for the CLI subprocess benchmark (slow)"
     )
     args = parser.parse_args()
+    if args.iterations < 1:
+        parser.error("--iterations must be at least 1")
+    if args.cli_iterations < 1:
+        parser.error("--cli-iterations must be at least 1")
 
     print("astra-daw-guard micro-benchmark (Issue #16)")
     print(f"Python: {sys.version.split()[0]}  Platform: {sys.platform}")

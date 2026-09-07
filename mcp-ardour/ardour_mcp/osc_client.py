@@ -76,16 +76,38 @@ class ArdourOSCClient:
         track/bus is one message, followed by a terminator message whose
         first argument is the literal string "end_route_list".
         """
-        deadline = time.monotonic() + (overall_timeout or self._timeout * 10)
+        budget = overall_timeout or self._timeout * 10
+        deadline = time.monotonic() + budget
         self._send(address, *args)
         results = []
         while True:
-            if time.monotonic() > deadline:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
                 raise ArdourOSCTimeout(
                     f"Ardour did not send an {end_marker!r} terminator for "
-                    f"{address} within {overall_timeout or self._timeout * 10}s."
+                    f"{address} within {budget}s."
                 )
-            msg = self._recv_one()
+            # Each reply only needs to arrive before the *overall* deadline,
+            # not within the fixed per-socket self._timeout -- a single gap
+            # between replies longer than self._timeout must not abort a
+            # query_list() call that still has budget left. Restore the
+            # socket's normal timeout afterward so query()/other callers on
+            # this client are unaffected.
+            self._sock.settimeout(remaining)
+            try:
+                msg = self._recv_one()
+            except ArdourOSCTimeout as exc:
+                # A timeout here always means the *overall* deadline was
+                # reached (the socket was just set to wait exactly
+                # `remaining`), not the fixed self._timeout -- re-raise
+                # with the accurate budget rather than _recv_one()'s
+                # generic per-call message.
+                raise ArdourOSCTimeout(
+                    f"Ardour did not send an {end_marker!r} terminator for "
+                    f"{address} within {budget}s."
+                ) from exc
+            finally:
+                self._sock.settimeout(self._timeout)
             params = tuple(msg.params)
             if params and params[0] == end_marker:
                 return results

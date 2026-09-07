@@ -15,6 +15,7 @@ someone happens to run it by hand. Run from the repo root:
 from __future__ import annotations
 
 import pathlib
+import subprocess
 import sys
 import unittest
 
@@ -57,6 +58,36 @@ class OutputSizeMeasurementTests(unittest.TestCase):
                 # demonstrate: minimal output must stay smaller than
                 # --full, not just "different".
                 self.assertLess(entry["minimal_bytes"], entry["full_bytes"])
+
+
+class ZeroIterationsIsRejectedNotACrashTests(unittest.TestCase):
+    """Issue #37: --iterations 0 / --cli-iterations 0 used to crash deep
+    inside statistics.mean() with a raw StatisticsError traceback. Both
+    flags must instead fail fast with a clear argparse error.
+    """
+
+    def _run(self, *extra_args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, "tools/benchmark.py", *extra_args],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    def test_iterations_zero_is_a_clean_argparse_error(self):
+        result = self._run("--iterations", "0", "--cli-iterations", "1")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--iterations must be at least 1", result.stderr)
+        self.assertNotIn("StatisticsError", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_cli_iterations_zero_is_a_clean_argparse_error(self):
+        result = self._run("--iterations", "1", "--cli-iterations", "0")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--cli-iterations must be at least 1", result.stderr)
+        self.assertNotIn("StatisticsError", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
 
 
 if __name__ == "__main__":
