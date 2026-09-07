@@ -61,6 +61,13 @@ _EXPECTED_RULE_ORDER = [
     ("GENERATED_MIDI_INTO_OTHER_TRACK", DENY),
     ("CREATE_GEN_TRACK", ALLOW),
     ("CREATE_OTHER_TRACK", ASK),
+    ("MIXER_CHANGE_ON_GEN_TRACK", ALLOW),
+    ("MIXER_CHANGE_ON_OTHER_TRACK", ASK),
+    ("DEVICE_PARAM_CHANGE_ON_GEN_TRACK", ALLOW),
+    ("DEVICE_PARAM_CHANGE_ON_OTHER_TRACK", ASK),
+    ("TRANSPORT_CONTROL", ALLOW),
+    ("TEMPO_CHANGE_APPROVED", ALLOW),
+    ("TEMPO_CHANGE_UNCONFIRMED", ASK),
 ]
 
 # The same 10 deny.txt-backed Actions test_enforcement.py's
@@ -118,6 +125,10 @@ class RuleOrderAndIdentityRegressionTests(unittest.TestCase):
                 "daw.license_dialog_respond",
                 "data.send_external",
                 "computer_use.invoke",
+                "track.mixer_change",
+                "device.param_change",
+                "transport.control",
+                "tempo.change",
             },
         )
 

@@ -309,3 +309,57 @@ Issue化して解決する作業を実施。新しいpolicy判定機能の追加
 `policy/allow.txt`、`mcp-ardour`、`enforcement/boundary.py`は無変更。
 テストは135件→152件（全通過）。実機DAW・実際のAstra runtimeとの結線は
 今回も対象外 — 書き込みツールの実機での動作は未検証のまま。
+
+## v0.9.3（Ableton Liveのミキサー・デバイス・トランスポート・テンポ制御 — Issue [#46](https://github.com/kajisho5/astra-daw-guard/issues/46)）
+
+ユーザーから「Reaper/Ableton書き込みだけでなく、ミキサー・デバイス
+パラメータ・Instrument Rack・トランスポート・テンポまで含めた
+Ableton Live全体の制御をしたい」との要望。Policy Engineでゲートする
+方針で合意の上、`policy/allow.txt`に新しいルールを4行追加してから実装した。
+
+- [x] `policy/allow.txt`に4行追加:
+      「GEN-トラックのミキサー設定変更は無確認可」
+      「GEN-トラックのデバイスパラメータ変更は無確認可」
+      「再生/停止はいつでも可」
+      「ユーザーがこのターンで依頼したテンポ変更は無確認可」。
+      既存のtrack.create/midi.writeと同じ「GEN-トラック＝エージェント
+      自身のサンドボックス」という設計思想を踏襲
+- [x] `policy_engine/rules.py`に新オペレーション4つのルールを追加:
+      `track.mixer_change`（GEN-トラックはALLOW、他はASK）、
+      `device.param_change`（同様）、`transport.control`（常にALLOW —
+      データを一切変更しないため）、`tempo.change`
+      （`user_requested_this_turn=True`ならALLOW、それ以外はASK —
+      プロジェクト全体のタイミングに影響するため）
+- [x] `mcp-ableton`に4つの書き込みツールを追加: `set_mixer_property` /
+      `set_device_parameter` / `control_transport` / `set_tempo`。
+      全て`enforcement.enforce()`経由
+- [x] **Instrument Rackのチェーン切り替えは実装しなかった** —
+      ユーザーからの要望に含まれていたが、AbletonOSCの
+      `abletonosc/device.py`を全体確認した結果、チェーン切り替え用の
+      OSCアドレスが1つも存在しないことを確認。無いものを実装したふりは
+      しない、というこのリポジトリの一貫した方針に従い、保存ツール
+      同様「対象外」として明記した
+- [x] volume/panningの数値レンジ（0.0-1.0で0.85が0dB相当、等）は
+      Ableton公式のLive Object Modelドキュメントでも確認できず、
+      「未確認」として明記した（誇張しない）
+- [x] 書き込み系OSCアドレス（`set/volume`・`set/panning`・`set/mute`・
+      `set/solo`・`/live/device/set/parameter/value`・
+      `start_playing`/`stop_playing`・`set/tempo`）が全て応答を返さない
+      ことをAbletonOSCのソースコードで確認済み。書き込み後は対応する
+      `get`系アドレスで読み直して確認し、確認できなければ
+      `AbletonWriteUnconfirmed`を投げる（Issue #44と同じ設計）
+- [x] `tests/test_ableton_write_tools.py`に4つの新テストクラスを追加
+      （enforcement gatingの検証、fakeのOSCオブジェクト使用）
+- [x] マージ前の独立レビューでさらに2件発見・修正: (1)
+      `device.param_change`のActionが`device_index`を含んでおらず、
+      監査ログ上で「同じトラックのどのデバイスを変更したか」を
+      区別できなかった問題(実際の判定結果は変わらないが、監査精度の
+      欠陥)。属性に追加し、再現テストも追加した。(2)
+      `_MIXER_PARAM_ADDRESSES`と`_MIXER_PARAM_PROPERTY_NAMES`が
+      実質重複した辞書だった（保守性の問題、将来の追加時に片方だけ
+      更新し忘れるリスク）。アドレス文字列からプロパティ名を導出する
+      形に統合した
+
+`policy_engine/rules.py`の既存ルール・`policy/deny.txt`・`mcp-reaper`・
+`mcp-ardour`・`enforcement/boundary.py`は無変更。テストは152件→177件
+（全通過）。実機Ableton Liveでの動作は今回も未検証のまま。

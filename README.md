@@ -43,17 +43,22 @@ provides a layer that can **decide and audit mechanically**.
 
 The guardrail itself (`SKILL.md` / `policy/`) works identically across
 every DAW. In addition, some DAWs ship with an MCP that can safely
-fetch tempo and track lists. Reaper and Ableton Live also have a small
-set of write tools (track creation, MIDI writing, and — Reaper only —
-Save As); Ardour's MCP remains read-only. Every write tool is gated
-through the Policy Engine and Enforcement Boundary described above —
-see `mcp-reaper/README.md` / `mcp-ableton/README.md` for exactly what
-each tool does and does not do.
+fetch tempo and track lists. Reaper and Ableton Live also have write
+tools — track creation, MIDI writing, mixer control (volume/pan/mute/
+solo), device parameter changes, transport control, tempo changes, and
+(Reaper only) Save As; Ardour's MCP remains read-only. Ableton Live has
+no save/export tool and no Instrument Rack chain-switching tool,
+because AbletonOSC (the bridge it goes through) has no OSC address for
+either capability at all — confirmed against AbletonOSC's own source,
+not assumed. Every write tool is gated through the Policy Engine and
+Enforcement Boundary described above — see `mcp-reaper/README.md` /
+`mcp-ableton/README.md` for exactly what each tool does and does not
+do.
 
 | DAW | MCP | Write tools | Transport | Verified against real hardware |
 |---|---|---|---|---|
 | Reaper | ✅ `mcp-reaper/` | ✅ create track / write MIDI / Save As | [reapy](https://github.com/RomeoDespres/reapy) (external Python wrapper) | Not verified (logic-only verification) |
-| Ableton Live | ✅ `mcp-ableton/` | ✅ create track / write MIDI | [AbletonOSC](https://github.com/ideoforms/AbletonOSC) (Remote Script) | Not verified (verified against a fake server) |
+| Ableton Live | ✅ `mcp-ableton/` | ✅ create track / write MIDI / mixer / device params / transport / tempo | [AbletonOSC](https://github.com/ideoforms/AbletonOSC) (Remote Script) | Not verified (verified against a fake server) |
 | Ardour | ✅ `mcp-ardour/` | Read-only | Ardour's own built-in OSC surface | Not verified (verified against a fake server) |
 | Bitwig Studio | Guardrail only (no MCP) | — | Reference: [DrivenByMoss](https://github.com/git-moss/DrivenByMoss)'s OSC support (community-made, use at your own risk) | Not investigated / not implemented (`adapters/bitwig.md`) |
 | FL Studio | Guardrail only (no MCP) | — | Reference: [`flstudio-mcp`](https://github.com/rosasynthesiz/flstudio-mcp) (community-made, use at your own risk) | Not investigated / not implemented (`adapters/flstudio.md`) |
@@ -68,7 +73,7 @@ The guardrail itself works the same on every DAW. MCPs currently exist
 for three DAWs — Reaper, Ableton Live, and Ardour — and none of the
 three has been verified against real hardware (logic has been verified
 against fake servers). Reaper's and Ableton Live's MCPs also have
-write tools now (Issue #44); Ardour's remains read-only. The remaining
+write tools now (Issues #44, #46); Ardour's remains read-only. The remaining
 DAWs were each investigated individually as of 2026-09-07, with the
 results recorded in `adapters/*.md`. Nothing here is exaggerated:
 where investigation found "this doesn't exist," that's stated plainly.
@@ -140,10 +145,10 @@ With this repository open:
 
 ## Current status
 
-The latest version is `v0.9.2`. Both the Policy Engine
+The latest version is `v0.9.3`. Both the Policy Engine
 (`policy_engine/`) and the Enforcement Boundary (`enforcement/`) are
-implemented, with all 152 tests passing. Reaper and Ableton Live now
-have a small set of Policy-Engine-gated write tools (Issue #44); see
+implemented, with all 177 tests passing. Reaper and Ableton Live now
+have a set of Policy-Engine-gated write tools (Issues #44, #46); see
 `CHANGELOG.md` for the full development history, and `ROADMAP.md` for
 the current assessment and what's next.
 

@@ -42,6 +42,10 @@ KNOWN_OPERATIONS = {
     "daw.license_dialog_respond",
     "data.send_external",
     "computer_use.invoke",
+    "track.mixer_change",
+    "device.param_change",
+    "transport.control",
+    "tempo.change",
 }
 
 

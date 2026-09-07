@@ -320,4 +320,63 @@ RULES: list[Rule] = [
         reason="Track creation unrelated to generated content is not covered by policy/allow.txt; confirm.",
         predicate=lambda a: a.operation == "track.create",
     ),
+    # ------------------------------------------------------------------
+    # track.mixer_change / device.param_change — policy/allow.txt (Issue #46)
+    # ------------------------------------------------------------------
+    Rule(
+        rule_id="MIXER_CHANGE_ON_GEN_TRACK",
+        decision=ALLOW,
+        reason="Mixer change on a track this agent created for generated content.",
+        source_text="Change mixer settings (volume, pan, mute, or solo) on a track named with prefix GEN- without asking again.",
+        predicate=lambda a: a.operation == "track.mixer_change" and str(a.attr("track", "")).startswith("GEN-"),
+    ),
+    Rule(
+        rule_id="MIXER_CHANGE_ON_OTHER_TRACK",
+        decision=ASK,
+        reason="Mixer change on a track not created by this agent is not covered by policy/allow.txt; confirm.",
+        predicate=lambda a: a.operation == "track.mixer_change",
+    ),
+    Rule(
+        rule_id="DEVICE_PARAM_CHANGE_ON_GEN_TRACK",
+        decision=ALLOW,
+        reason="Device parameter change on a track this agent created for generated content.",
+        source_text="Change device parameters on a track named with prefix GEN- without asking again.",
+        predicate=lambda a: a.operation == "device.param_change" and str(a.attr("track", "")).startswith("GEN-"),
+    ),
+    Rule(
+        rule_id="DEVICE_PARAM_CHANGE_ON_OTHER_TRACK",
+        decision=ASK,
+        reason="Device parameter change on a track not created by this agent is not covered by policy/allow.txt; confirm.",
+        predicate=lambda a: a.operation == "device.param_change",
+    ),
+    # ------------------------------------------------------------------
+    # transport.control — policy/allow.txt (Issue #46)
+    # ------------------------------------------------------------------
+    Rule(
+        rule_id="TRANSPORT_CONTROL",
+        decision=ALLOW,
+        reason="Starting/stopping playback changes no project data.",
+        source_text="Start or stop playback at any time.",
+        predicate=lambda a: a.operation == "transport.control",
+    ),
+    # ------------------------------------------------------------------
+    # tempo.change — policy/allow.txt (Issue #46)
+    # ------------------------------------------------------------------
+    Rule(
+        rule_id="TEMPO_CHANGE_APPROVED",
+        decision=ALLOW,
+        reason="Tempo change explicitly requested by the user this turn.",
+        source_text="Change tempo (BPM) if the user asked in this turn.",
+        predicate=lambda a: a.operation == "tempo.change" and a.attr("user_requested_this_turn", False),
+    ),
+    Rule(
+        rule_id="TEMPO_CHANGE_UNCONFIRMED",
+        decision=ASK,
+        reason=(
+            "Tempo change was proposed without a recorded user request this turn; "
+            "confirm before changing project-wide timing."
+        ),
+        source_text="Change tempo (BPM) if the user asked in this turn.",
+        predicate=lambda a: a.operation == "tempo.change",
+    ),
 ]

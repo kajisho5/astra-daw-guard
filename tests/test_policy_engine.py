@@ -69,6 +69,41 @@ class AllowTests(unittest.TestCase):
         )
         self.assertEqual(d.decision, ALLOW)
 
+    def test_mixer_change_on_gen_track(self):
+        d = evaluate(
+            {
+                "operation": "track.mixer_change",
+                "attributes": {"track": "GEN-drums", "param": "volume", "value": 0.7},
+            }
+        )
+        self.assertEqual(d.decision, ALLOW)
+        self.assertEqual(d.rule_id, "MIXER_CHANGE_ON_GEN_TRACK")
+
+    def test_device_param_change_on_gen_track(self):
+        d = evaluate(
+            {
+                "operation": "device.param_change",
+                "attributes": {"track": "GEN-bass", "param_index": 0, "value": 0.5},
+            }
+        )
+        self.assertEqual(d.decision, ALLOW)
+        self.assertEqual(d.rule_id, "DEVICE_PARAM_CHANGE_ON_GEN_TRACK")
+
+    def test_transport_control_always_allowed(self):
+        d = evaluate({"operation": "transport.control", "attributes": {"action": "play"}})
+        self.assertEqual(d.decision, ALLOW)
+        self.assertEqual(d.rule_id, "TRANSPORT_CONTROL")
+
+    def test_tempo_change_with_confirmed_request(self):
+        d = evaluate(
+            {
+                "operation": "tempo.change",
+                "attributes": {"bpm": 128.0, "user_requested_this_turn": True},
+            }
+        )
+        self.assertEqual(d.decision, ALLOW)
+        self.assertEqual(d.rule_id, "TEMPO_CHANGE_APPROVED")
+
 
 class AskTests(unittest.TestCase):
     def test_save_as_without_confirmed_request(self):
@@ -98,6 +133,31 @@ class AskTests(unittest.TestCase):
     def test_create_unrelated_track(self):
         d = evaluate({"operation": "track.create", "attributes": {"name": "Vocals"}})
         self.assertEqual(d.decision, ASK)
+
+    def test_mixer_change_on_other_track(self):
+        d = evaluate(
+            {
+                "operation": "track.mixer_change",
+                "attributes": {"track": "Vocals", "param": "mute", "value": True},
+            }
+        )
+        self.assertEqual(d.decision, ASK)
+        self.assertEqual(d.rule_id, "MIXER_CHANGE_ON_OTHER_TRACK")
+
+    def test_device_param_change_on_other_track(self):
+        d = evaluate(
+            {
+                "operation": "device.param_change",
+                "attributes": {"track": "Vocals", "param_index": 0, "value": 0.5},
+            }
+        )
+        self.assertEqual(d.decision, ASK)
+        self.assertEqual(d.rule_id, "DEVICE_PARAM_CHANGE_ON_OTHER_TRACK")
+
+    def test_tempo_change_without_confirmed_request(self):
+        d = evaluate({"operation": "tempo.change", "attributes": {"bpm": 128.0}})
+        self.assertEqual(d.decision, ASK)
+        self.assertEqual(d.rule_id, "TEMPO_CHANGE_UNCONFIRMED")
 
 
 class DenyTests(unittest.TestCase):

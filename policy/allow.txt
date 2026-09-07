@@ -10,3 +10,7 @@ Save As to a new filename that includes a timestamp if the user asked to save.
 Use MCP/OSC/ReaScript if already configured.
 Fetch a file only when: user named the URL in this turn AND the host is on license-allowlist.txt.
 Report sources after every run using checklists/after.md.
+Change mixer settings (volume, pan, mute, or solo) on a track named with prefix GEN- without asking again.
+Change device parameters on a track named with prefix GEN- without asking again.
+Start or stop playback at any time.
+Change tempo (BPM) if the user asked in this turn.
