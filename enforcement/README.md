@@ -104,6 +104,23 @@ create_track("Vocals", approved=True)  # 明示的承認後 → 実行
 1エントリずつ追記されます（`decision`辞書 + `executed` + `timestamp`）。
 これ自体が今回の実装の目的ではなく、あくまで補助機能です。
 
+### Agent向け表示の最小化と、Audit Logの分離（Issue #16）
+
+Issue #16でAgent向けの表示を最小化しました（`policy_engine.cli`の
+デフォルト出力、`checklists/during.md`のin-process優先）。`enforce()`
+の戻り値自体はもともと`tool()`の戻り値そのものであり、`decision`/
+`rule_id`/`reason`等をAgentに逐一見せる作りではありません。
+
+このAgent向け表示の最小化は、**監査に必要な情報を一切減らしていません**。
+`audit_log`に渡したリストには、`decision`/`rule_id`/`reason`/
+`operation`/`target`/`attributes`/`capability_available`の全フィールドが
+`executed`/`timestamp`と共に毎回記録されます — Agentが実行時に読む
+テキストを削っても、事後に何が起きたかを完全に再構成できることは
+`tests/test_audit_separation.py`で固定しています。CLI経由で呼ぶ
+非Python呼び出し元には`audit_log`が無いので、同等の完全な記録が
+必要な場合は`policy_engine.cli --full`を使ってください
+（`policy_engine/README.md`参照）。
+
 ## 動作確認
 
 `tests/test_enforcement.py`（16テスト、全て成功）で以下を検証済みです。
@@ -116,6 +133,9 @@ create_track("Vocals", approved=True)  # 明示的承認後 → 実行
 - fail-closed（未知operation・不正な構造）でもTool未実行、`approved=True`でも同様
 - `@guarded`デコレータでも同じ保証が成り立つ
 - Audit Logが両方のケース（ブロック/実行）を正しく記録する
+
+Agent向け表示の最小化とAudit Logの分離自体は`tests/test_audit_separation.py`
+（7テスト、全て成功）で検証しています。
 
 実際のAstra runtimeとの結線・実機DAWでの確認は対象外です（上記
 「これは何か/何ではないか」参照）。
