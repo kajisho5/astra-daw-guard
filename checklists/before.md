@@ -3,6 +3,10 @@
 Purpose: questions an agent asks itself before touching a DAW session.
 Answer each with Yes/No before acting.
 
+- 使用中のDAWは何か。対応する `adapters/<name>.md` を読んだか
+  (Which DAW is open? Have you read its `adapters/<name>.md`? Find the
+  filename in `adapters/README.md` if unsure. Yes/No — if No, read it
+  before anything else in this list)
 - 開いているプロジェクト名は何か (What is the name of the open project?)
 - ユーザーは保存を依頼したか (Did the user ask to save, this turn? Yes/No)
 - 依頼は「作曲」か「既存曲の再現」か「編曲」か
