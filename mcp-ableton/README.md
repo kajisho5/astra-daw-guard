@@ -42,11 +42,22 @@ AbletonOSC 自体はこのリポジトリの一部ではありません。上記
 
 ```bash
 cd mcp-ableton
-pip install -e .
+python3 install.py
 ```
 
-Ableton Live 側で AbletonOSC を Control Surface として選択した状態で
-起動しておいてください。
+`pip install -e .` に加えて、AbletonOSC を `git clone` で Ableton の
+Remote Scripts フォルダ（OS別の正しい場所を自動判定）に配置します。
+
+これで自動化できるのはここまでです。**残り2つの手動操作**は
+Ableton の外からは実行できません:
+
+1. Ableton Live を再起動する
+2. Preferences > Link/Tempo/MIDI > Control Surface で **AbletonOSC** を選ぶ
+
+手動でやりたい場合、`install.py` がやっているのは「AbletonOSCを
+`git clone`してRemote Scriptsフォルダに置く」だけです。OS別の配置先は
+[AbletonOSCのREADME](https://github.com/ideoforms/AbletonOSC)を参照して
+ください。
 
 ## 起動
 

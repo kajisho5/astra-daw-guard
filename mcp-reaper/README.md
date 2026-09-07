@@ -31,13 +31,22 @@ Windows/Mac 環境）での動作確認はできていません**。以下は確
 
 ## セットアップ
 
+Reaper を起動した状態で:
+
 ```bash
 cd mcp-reaper
+python3 install.py
+```
+
+`pip install -e .` と `reapy.configure_reaper()` をまとめて実行します。
+終わったら **Reaper を再起動**してください（reapy 側の要求で、これだけは
+自動化できません）。
+
+手動でやりたい場合、`install.py` の中身は以下と同じです。
+
+```bash
 pip install -e .
-
-# Reaper を起動した状態で、初回のみ実行
 python -c "import reapy; reapy.configure_reaper()"
-
 # Reaper を再起動する（reapy 側の要求）
 ```
 
