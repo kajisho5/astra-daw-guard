@@ -19,6 +19,26 @@ AIエージェント（GPT-6 Astra、Codex、Claude Code など）が DAW
 - 自動作曲モデルを訓練すること
 - Computer Use のスクリーンクリック自動化を実装すること
 
+## 対応DAW
+
+ガードレール本体（`SKILL.md` / `policy/`）は全DAW共通で使えます。加えて、
+一部のDAWには「読み取り専用MCP」を同梱しており、テンポやトラック一覧を
+安全に取得できます（書き込み系の操作は一切実装していません）。
+
+| DAW | 読み取り専用MCP | 経由するもの | 実機での動作確認 |
+|---|---|---|---|
+| Reaper | ✅ `mcp-reaper/` | [reapy](https://github.com/RomeoDespres/reapy)（外部Pythonラッパー） | 未確認（ロジック検証のみ） |
+| Ableton Live | ✅ `mcp-ableton/` | [AbletonOSC](https://github.com/ideoforms/AbletonOSC)（Remote Script） | 未確認（擬似サーバーで検証済み） |
+| Cubase | ガードレールのみ（MCP未実装） | — | — |
+| FL Studio | ガードレールのみ（MCP未実装） | — | — |
+
+Cubase・FL Studioは`adapters/`に注意書きはありますが、専用の読み取り
+MCPはまだありません。操作はガードレール（`SKILL.md`の優先順位に従い、
+可能な限り既存のMCP/OSC、無ければComputer Use）に委ねます。
+
+各アダプタの詳細・セットアップ手順は `mcp-reaper/README.md` /
+`mcp-ableton/README.md` / `adapters/*.md` を参照してください。
+
 ## Astra など外部エージェントへの渡し方
 
 このリポジトリの URL を渡すだけで使わせたい場合、次のように指示してください
