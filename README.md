@@ -175,5 +175,20 @@ ALLOW / ASK / DENY で機械的に判定できるようにした。詳細は
       READMEで役割を明確に分離
 - [x] テスト35件（ALLOW/ASK/DENY各ケース、fail-closedケース、
       source同期チェック、capability整合性チェック）— 全て通過
-- [ ] 実際のAgentの行動選択への組み込み — 今回の対象外。ロジック単体の
-      提供に留まる
+- [x] 実際のAgentの行動選択への組み込み — v0.6で対応（下記）
+
+## v0.6（Policy Engineの行動ループ統合 — Issue [#12](https://github.com/kajisho5/astra-daw-guard/issues/12)）
+
+Policy Engineが「あるだけで呼ばれない」状態を避けるため、Agentが実際に
+呼び出す具体的な手順を`checklists/during.md`に落とし込んだ。
+
+- [x] `checklists/during.md`を、操作ごとにPolicy Engineへ通す具体的な
+      手順として書き直し。操作→Action JSONの対応表を追加（13ケース、
+      すべて実行して記載通りの結果になることを確認済み）
+- [x] `examples/good-run.md` / `bad-run-midi-fetch.md` /
+      `bad-run-autosave.md` に、実際の`policy_engine.cli`呼び出しと
+      その結果を追記。悪い例では「通していればDENYで防げていた」ことを
+      実際の出力で示した
+- [x] `policy_engine/`のロジック・テストは無変更（既存35テスト継続通過）
+- [x] コード実行できない環境のAgent向けに、`policy/deny.txt`への
+      フォールバック手順も明記（Policy Engineが使えない場合の代替）

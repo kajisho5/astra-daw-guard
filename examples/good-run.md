@@ -8,9 +8,30 @@
 
 - `checklists/before.md` を確認: 依頼は「作曲」、保存依頼なし、MCP/OSC あり
 - MCP/OSC でプロジェクトのテンポ・トラック一覧を読み取り
-- 新規トラック `GEN-drums` を作成し、8小節分のドラムMIDIをゼロから生成して書き込み
+- 新規トラック `GEN-drums` を作成する前に、`checklists/during.md` の手順で
+  Policy Engine に通す:
+
+  ```bash
+  $ echo '{"operation": "track.create", "attributes": {"name": "GEN-drums"}}' | python3 -m policy_engine.cli
+  {
+    "decision": "ALLOW",
+    "rule_id": "CREATE_GEN_TRACK",
+    "reason": "New track created for generated content, correctly prefixed.",
+    ...
+  }
+  ```
+
+- ALLOWを確認してから `GEN-drums` トラックを作成し、8小節分のドラムMIDIを
+  ゼロから生成して書き込み。書き込み前にも同様に確認:
+
+  ```bash
+  $ echo '{"operation": "midi.write", "attributes": {"source": "generated", "track": "GEN-drums"}}' | python3 -m policy_engine.cli
+  {"decision": "ALLOW", "rule_id": "GENERATED_MIDI_INTO_GEN_TRACK", ...}
+  ```
+
 - 既存トラックには触れていない
-- 保存操作は行っていない
+- 保存操作は行っていない（ユーザーが依頼していないため、`project.save`は
+  そもそも提案しない）
 - Computer Use は使用していない
 
 ## 報告 (report)
