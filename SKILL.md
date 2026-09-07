@@ -1,9 +1,10 @@
 # astra-daw-guard SKILL
 
 Purpose: guardrails for any agent (Astra, Codex, Claude Code, etc.) that
-operates a DAW (Ableton Live, Reaper, Cubase, FL Studio) on a user's
-machine. This document is self-contained — an agent that reads only this
-file can operate safely.
+operates a DAW (Ableton Live, Reaper, Ardour, Bitwig, Cubase, FL Studio,
+Pro Tools, Logic Pro, Studio One, Cakewalk, GarageBand, or any other) on
+a user's machine. This document is self-contained — an agent that reads
+only this file can operate safely.
 
 Rule text is in English so it is read consistently by different agents.
 Japanese notes are added where useful for the human operator.
@@ -112,16 +113,18 @@ Failures:
 
 ## 8. DAW別の注意 (Per-DAW notes — details in adapters/)
 
-- **Ableton**: this repo's own read-only adapter (`mcp-ableton/`, via
-  AbletonOSC) covers tempo/tracks — see `adapters/ableton.md`. Beyond
-  that, only unofficial bridges exist; read this guard before using any
-  of them.
-- **Reaper**: this repo's own read-only adapter (`mcp-reaper/`, via
-  reapy) covers tempo/tracks. Beyond that, ReaScript can read/write
-  directly — allow only reading and adding new tracks — see
-  `adapters/reaper.md`.
-- **Cubase**: automation API is limited; most control goes through
-  Computer Use. Never touch save dialogs or window layout — see
-  `adapters/cubase.md`.
-- **FL Studio**: similar limits to Cubase. Piano roll clicks via Computer
-  Use are unreliable and easy to get wrong — see `adapters/flstudio.md`.
+This repo ships its own read-only MCP for three DAWs; for everything
+else, read the matching `adapters/*.md` before touching that DAW — most
+have no safe read path beyond Computer Use, and each file says exactly
+what was checked and when.
+
+- **Reaper** ✅ `mcp-reaper/` (via reapy) — `adapters/reaper.md`
+- **Ableton Live** ✅ `mcp-ableton/` (via AbletonOSC) — `adapters/ableton.md`
+- **Ardour** ✅ `mcp-ardour/` (via Ardour's built-in OSC) — `adapters/ardour.md`
+- **Bitwig Studio**, **FL Studio**: a community bridge exists (see the
+  adapter file) but this repo hasn't wrapped or verified it — use only
+  its read-only surface if you rely on it — `adapters/bitwig.md`,
+  `adapters/flstudio.md`
+- **Cubase**, **Pro Tools**, **Logic Pro**, **Studio One**, **Cakewalk**,
+  **GarageBand**: no safe read path beyond Computer Use was found as of
+  this writing — see the matching `adapters/*.md` for what was checked

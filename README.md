@@ -1,10 +1,10 @@
 # astra-daw-guard
 
-AIエージェント（GPT-6 Astra、Codex、Claude Code など）が DAW
-（Ableton / Reaper / Cubase / FL Studio）を操作するときに従うべき
-禁止事項・許可事項・作業後レポートのフォーマットをまとめたガードレール
-リポジトリです。操作そのものは既存の MCP / OSC / Computer Use に任せ、
-このリポジトリはその前後にかぶせる「やってよいこと・悪いこと」の層です。
+AIエージェント（GPT-6 Astra、Codex、Claude Code など）が DAW を
+操作するときに従うべき禁止事項・許可事項・作業後レポートのフォーマット
+をまとめたガードレールリポジトリです。特定のDAWに限定していません。
+操作そのものは既存の MCP / OSC / Computer Use に任せ、このリポジトリは
+その前後にかぶせる「やってよいこと・悪いこと」の層です。
 
 ## 防ぐこと
 
@@ -29,20 +29,26 @@ AIエージェント（GPT-6 Astra、Codex、Claude Code など）が DAW
 |---|---|---|---|
 | Reaper | ✅ `mcp-reaper/` | [reapy](https://github.com/RomeoDespres/reapy)（外部Pythonラッパー） | 未確認（ロジック検証のみ） |
 | Ableton Live | ✅ `mcp-ableton/` | [AbletonOSC](https://github.com/ideoforms/AbletonOSC)（Remote Script） | 未確認（擬似サーバーで検証済み） |
-| Cubase | ガードレールのみ（MCPなし） | — | 調査済み: プラットフォーム側の制約で読み取り不可（`adapters/cubase.md`） |
+| Ardour | ✅ `mcp-ardour/` | Ardour本体に内蔵のOSCサーフェス | 未確認（擬似サーバーで検証済み） |
+| Bitwig Studio | ガードレールのみ（MCPなし） | 参考: [DrivenByMoss](https://github.com/git-moss/DrivenByMoss)のOSC機能（コミュニティ製・自己責任） | 未検証・未実装（`adapters/bitwig.md`） |
 | FL Studio | ガードレールのみ（MCPなし） | 参考: [`flstudio-mcp`](https://github.com/rosasynthesiz/flstudio-mcp)（コミュニティ製・自己責任） | 未検証・未実装（`adapters/flstudio.md`） |
+| Cubase | ガードレールのみ（MCPなし） | — | 調査済み: プラットフォーム側の制約で読み取り不可（`adapters/cubase.md`） |
+| Pro Tools | ガードレールのみ（MCPなし） | — | 調査済み: EUCONはAvidパートナー限定で一般利用不可（`adapters/protools.md`） |
+| Logic Pro | ガードレールのみ（MCPなし） | — | 調査済み: 読み取り可能なAPI/OSCなし（`adapters/logicpro.md`） |
+| Studio One | ガードレールのみ（MCPなし） | — | 調査済み: 公開API/OSCなし（`adapters/studioone.md`） |
+| Cakewalk | ガードレールのみ（MCPなし） | — | 調査済み: 公開API/OSCなし（`adapters/cakewalk.md`） |
+| GarageBand | ガードレールのみ（MCPなし） | — | スクリプト機能自体が無い（`adapters/garageband.md`） |
 
-Cubase・FL Studioにはこのリポジトリ独自の読み取り専用MCPはまだありません。
-2026-09-07時点で調査したところ、Cubaseは既存のMIDI Remote APIブリッジが
-すべて書き込み専用で、トラック名やテンポの読み取りができない（プラット
-フォーム側の制約）ことを確認しました。FL Studioにはコミュニティ製の
-`flstudio-mcp`（beta）が読み取り専用リソースを持っていますが、この
-リポジトリではラップ・検証していません。詳細は各`adapters/*.md`を参照
-してください。操作はガードレール（`SKILL.md`の優先順位に従い、可能な
-限り既存のMCP/OSC、無ければComputer Use）に委ねます。
+ガードレール本体はどのDAWでも同じように使えます。読み取り専用MCPが
+あるのは今のところ Reaper・Ableton Live・Ardour の3つで、いずれも実機
+での疎通は未検証です（擬似サーバーでのロジック検証は実施済み）。他の
+DAWは2026-09-07時点で個別に調査し、結果を`adapters/*.md`に記録して
+います。誇張せず、調査済みで「無い」と分かったものは「無い」と明記して
+います。
 
 各アダプタの詳細・セットアップ手順は `mcp-reaper/README.md` /
-`mcp-ableton/README.md` / `adapters/*.md` を参照してください。
+`mcp-ableton/README.md` / `mcp-ardour/README.md` / `adapters/*.md` を
+参照してください。
 
 ## Astra など外部エージェントへの渡し方
 
@@ -120,3 +126,20 @@ v0.1 はドキュメントのみです。コード・依存パッケージ・テ
       経由。OSCアドレスは一次ソースで確認済み、往復ロジックは
       擬似AbletonOSCサーバーで検証済みだが、実機の Ableton Live では
       未検証（詳細は `mcp-ableton/README.md`）
+
+## v0.4（進行中、全DAW調査）
+
+「他のDAWにも対応してほしい」との要望で、Reaper/Ableton以外の主要DAW
+（Ardour, Bitwig Studio, Cubase, FL Studio, Pro Tools, Logic Pro,
+Studio One, Cakewalk, GarageBand）を2026-09-07に調査。
+
+- [x] Ardour 読み取り専用 MCP（トラック/バス一覧、トランスポート） —
+      `mcp-ardour/` に実装。Ardour本体内蔵のOSCサーフェス経由。
+      テンポ取得APIはArdour自体に存在しないことを確認したため未実装
+      （詳細は `mcp-ardour/README.md`）
+- [x] Bitwig Studio, FL Studio — コミュニティ製ブリッジ
+      （DrivenByMoss / flstudio-mcp）を確認。このリポジトリでは
+      ラップ・実装せず、`adapters/*.md`に案内のみ記載
+- [x] Cubase, Pro Tools, Logic Pro, Studio One, Cakewalk, GarageBand —
+      いずれも読み取り可能な外部API/OSCが存在しないことを個別に調査・
+      確認。各`adapters/*.md`に根拠を記載
