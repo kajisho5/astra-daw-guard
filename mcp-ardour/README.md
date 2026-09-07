@@ -28,8 +28,10 @@ Ardour自身が最初からOSCサーバーを内蔵しています）。**書き
 - 確認済み: `osc_client.py`の`query_list()`（`/strip/list`の複数返信を
   集約する処理）の`overall_timeout`予算の扱いは、自動テスト
   `tests/test_ardour_osc_client.py`（fakeソケット使用、Ardour本体不要）
-  で固定済み（Issue #38 — 修正前は単発の返信間隔が2秒空くだけで
-  全体20秒の予算内でも打ち切られていたバグ）
+  で固定済み（Issue #38 — 修正前は単発の返信間隔が`self._timeout`
+  （デフォルト2.0秒、コンストラクタ引数で変更可）を超えるだけで、
+  全体`overall_timeout`（デフォルト20秒）の予算が残っていても
+  打ち切られていたバグ）
 - **未確認**: 本物の Ardour との実際の疎通
 
 ## 前提条件
