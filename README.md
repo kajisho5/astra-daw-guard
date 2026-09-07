@@ -9,10 +9,14 @@ MCPコレクションではありません。特定のDAWにも限定してい�
 
 判定は2段構えです。`SKILL.md`をAgentに読ませて自然言語で守らせる層
 （人間にも読める）と、`policy_engine/`という**機械可読なALLOW/ASK/DENY
-判定エンジン**（構造化データのみを扱い、fail-closed）です。後者は
-現時点ではロジック単体の検証に留まり、実際のAgentの行動選択に
-組み込むかどうかは呼び出し側の実装次第です。「安全を保証する」もの
-ではなく、「機械的に判定・監査できる」層を提供するものです。
+判定エンジン**（構造化データのみを扱い、fail-closed）です。
+`checklists/during.md`が操作ごとにこのエンジンを呼ぶ具体的な手順を、
+`enforcement/`がTool実行そのものをこの判定でゲートする参照実装を
+提供します。ただし、これは**Astra自身の実行中のAgent runtimeへの
+実接続ではありません** — このリポジトリには実行中のAgentループが
+存在しないため、呼び出し側（実際のAgent実行環境）がこれらをどう使う
+かに委ねられています。「安全を保証する」ものではなく、「機械的に
+判定・監査できる」層を提供するものです。
 
 ## 防ぐこと
 
@@ -85,19 +89,25 @@ https://github.com/kajisho5/astra-daw-guard
 - 許可事項: https://raw.githubusercontent.com/kajisho5/astra-daw-guard/main/policy/allow.txt
 - 報告フォーマット: https://raw.githubusercontent.com/kajisho5/astra-daw-guard/main/checklists/after.md
 
-念のため、最低限守るべき禁止事項をここにも書いておきます
-（正本は `policy/deny.txt`。内容が食い違ったら `policy/deny.txt` が優先）:
+念のため、最低限守るべき禁止事項を`policy/deny.txt`の10行全てここにも
+書いておきます（正本は `policy/deny.txt`。内容が食い違ったら
+`policy/deny.txt` が優先）:
 
 - ユーザーが今のターンで明示的に許可していない限り、ネットから
   `.mid` / `.midi` / `.kar` を取得しない
 - BitMidi・MIDIWorld・Free MIDI など出所不明の MIDI 倉庫サイトからは
   取得しない
+- 「パブリックドメイン」という表示だけでは信頼しない。ホストが
+  `policy/license-allowlist.txt` に無ければ取得前に確認する
 - 開いているプロジェクトファイルを上書き保存しない（保存する場合は
   必ず Save As、かつユーザーが保存を依頼した場合のみ）
 - 生成したMIDIと外部から取り込んだ素材を、出典を書かずに同じトラックへ
   混ぜない
-- DAW のウィンドウ位置・サイズ・配色・キー割り当てを変更しない
+- DAW のウィンドウ位置・サイズを変更しない
+- 表示倍率・配色テーマ・キー割り当てを変更しない
 - プラグインのインストールやライセンスダイアログへの応答をしない
+- プロジェクトファイル・ステム・未公開の楽曲を、このセッションで
+  使っているモデルAPI以外へ送信しない
 - MCP/OSC で同じ操作ができるなら Computer Use を使わない
 
 全文は `policy/deny.txt`、実行手順は `SKILL.md` を参照してください。
@@ -224,3 +234,54 @@ Policy Engineの判定でゲートする**参照実装。詳細は`enforcement/R
   ため、Enforcementを追加してもDENY/ASKパスが一度も発火せず実演に
   ならない。かつ実機未検証のコードに不要な変更を加えるリスクを避けた
 - 実機DAWでの確認は対象外（従来通り）
+
+## v0.8（ASTRA Runtime Efficiency & UX Optimization — Issue [#16](https://github.com/kajisho5/astra-daw-guard/issues/16)）
+
+Policy Engine / Enforcement Boundaryの**安全性は一切弱めずに**、
+Agent（Astra）が実際に使う際のトークン・レイテンシ・UXを最適化した。
+Phase 0（現状の再調査）とPhase 1（実測）を先に行い、測定できる事実
+（文字数・呼び出し回数・実測レイテンシ）と測定不能な事実（実際の
+Astraのトークン数・再読込み挙動）を明確に分けた上で、承認された
+範囲のみ順番に実装した。
+
+- [x] 既存Policyの不整合確認（Step 0） — `track.mix_sources`の
+      `UNLABELED_MIXED_SOURCES`/`LABELED_MIXED_SOURCES`を疑われた
+      バグとして再検証。ソースコードと既存テストで「バグなし」と
+      確認し、修正は行わなかった
+- [x] CLI → in-process優先（Step 1, PR [#17](https://github.com/kajisho5/astra-daw-guard/pull/17)） — 実測で
+      in-process `evaluate()` 数μs、CLI subprocess起動 数十ms
+      （約1万倍）の差を確認。`checklists/during.md`の推奨手順を
+      in-process優先に変更（CLIは非Python呼び出し元向けフォール
+      バックとして存続）
+- [x] Capability-unavailable vs Policy-DENY分離（Step 2, PR [#18](https://github.com/kajisho5/astra-daw-guard/pull/18)） —
+      Ardourの`read.tempo`が`ALLOW`を返すが`mcp-ardour`に該当ツールが
+      無いギャップを`Decision.capability_available`フィールドで分離。
+      `decision`（ALLOW/ASK/DENY）自体は不変
+- [x] Agent-visible output minimization（Step 3, PR [#19](https://github.com/kajisho5/astra-daw-guard/pull/19)） —
+      `policy_engine.cli`のデフォルト出力を最小化（実測で約50%削減）。
+      `--full`/`--pretty`で完全出力・整形出力に戻せる
+- [x] セキュリティ回帰テスト（Step 4, PR [#20](https://github.com/kajisho5/astra-daw-guard/pull/20)） — Step 1-3が
+      ALLOW/ASK/DENYの判定結果・ルール順を一切変えていないことを
+      横断的に固定するテストを追加
+- [x] Audit separation（Step 5, PR [#21](https://github.com/kajisho5/astra-daw-guard/pull/21)） — Agent向け表示の
+      最小化が監査情報を一切失っていないことを明文化・regression testで固定
+- [x] Approval UX + Failure UX（Step 6, PR [#22](https://github.com/kajisho5/astra-daw-guard/pull/22)） —
+      `tools/decision_message.py`を新規追加。`policy_engine`の
+      `rule_id`をキーに、ASK確認文言・DENY拒否文言を日英バイリンガル
+      で提供（`tools/refusal_message.py`はDENY専用・別スラッグとして
+      無変更のまま併存）
+- [x] ベンチマーク（Step 7, PR [#23](https://github.com/kajisho5/astra-daw-guard/pull/23)） — `tools/benchmark.py`で
+      Phase 1の実測値をいつでも再現できるようにした。数値は実行環境
+      依存であり、Astra実機の本番性能ではないことを明記
+
+**測定できたこと/できなかったことの区別（誇張しない）**:
+
+- 測定できた: 各ドキュメントの文字数、CLI出力のバイト数、
+  `evaluate()`/`enforce()`呼び出し回数、実測レイテンシ
+  （`time.perf_counter()`、この環境・この1回の実行）
+- 測定できなかった/測定不能: 実際のAstraのトークン消費量、実際の
+  Agentがドキュメントを再読込みする頻度・挙動、本番環境でのCLI
+  起動コスト — これらは本リポジトリにAstraの実行環境が無いため
+  原理的に計測できず、一度も「測定済み」として扱っていない
+- このフェーズも実機DAW・実際のAstra runtimeとの結線は対象外
+  （v0.7までと同様）
