@@ -35,6 +35,20 @@ class Decision:
     operation: str
     target: str
     attributes: dict[str, Any]
+    # Whether this repo's MCP/OSC adapter actually implements this read
+    # for the DAW named in attributes["daw"] (see capabilities.py).
+    # None means "not applicable / not checked" (non-read operation, or
+    # no "daw" attribute given) — it is never a substitute for
+    # `decision`. This is deliberately separate from ALLOW/ASK/DENY:
+    # policy never forbids reading state, so a read.* Action is ALLOW
+    # regardless of whether a given DAW's adapter can actually do it.
+    # capability_available=False means "this specific MCP tool doesn't
+    # exist for this DAW" (a capability gap the caller must fall back
+    # from, per SKILL.md's priority order) — it does NOT mean "denied by
+    # policy". Conflating the two would make an agent treat a missing
+    # MCP tool as a policy violation, or a policy DENY as something a
+    # different tool might route around.
+    capability_available: Optional[bool] = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -44,6 +58,7 @@ class Decision:
             "operation": self.operation,
             "target": self.target,
             "attributes": self.attributes,
+            "capability_available": self.capability_available,
         }
 
 

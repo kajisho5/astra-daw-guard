@@ -245,6 +245,48 @@ class DecisionAuditabilityTests(unittest.TestCase):
         self.assertTrue(payload["reason"])  # never an empty explanation
 
 
+class CapabilityAvailabilityTests(unittest.TestCase):
+    """capability_available must never be confused with the ALLOW/ASK/DENY
+    decision itself: it only says whether this repo's MCP/OSC adapter
+    actually implements a given read for a given DAW. A read is always
+    ALLOW regardless of this field — policy never forbids reading state.
+    """
+
+    def test_no_daw_given_is_not_applicable(self):
+        d = evaluate({"operation": "read.tempo"})
+        self.assertEqual(d.decision, ALLOW)
+        self.assertIsNone(d.capability_available)
+
+    def test_non_read_operation_is_not_applicable_even_with_daw(self):
+        d = evaluate(
+            {"operation": "track.create", "attributes": {"name": "GEN-drums", "daw": "reaper"}}
+        )
+        self.assertIsNone(d.capability_available)
+
+    def test_supported_read_is_allow_and_capability_true(self):
+        d = evaluate({"operation": "read.tempo", "attributes": {"daw": "reaper"}})
+        self.assertEqual(d.decision, ALLOW)
+        self.assertTrue(d.capability_available)
+
+    def test_unsupported_read_is_still_allow_but_capability_false(self):
+        # The confirmed gap this regression test locks down: Ardour has
+        # no tempo-query OSC command (see mcp-ardour/README.md), so
+        # read.tempo must stay ALLOW (policy permits reading tempo) while
+        # capability_available reports False — a capability gap, never a
+        # policy DENY.
+        d = evaluate({"operation": "read.tempo", "attributes": {"daw": "ardour"}})
+        self.assertEqual(d.decision, ALLOW)
+        self.assertEqual(d.rule_id, "READ_ONLY")
+        self.assertFalse(d.capability_available)
+
+    def test_capability_available_matches_matrix_for_every_read_operation(self):
+        for operation in CAPABILITY_MATRIX:
+            for daw in ("reaper", "ableton", "ardour"):
+                d = evaluate({"operation": operation, "attributes": {"daw": daw}})
+                expected = daw in CAPABILITY_MATRIX[operation]
+                self.assertEqual(d.capability_available, expected, msg=(operation, daw))
+
+
 class SourceSyncTests(unittest.TestCase):
     """Rules must not silently drift away from policy/deny.txt and
     policy/allow.txt — the whole point of naming those as source of

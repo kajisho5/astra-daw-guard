@@ -41,6 +41,21 @@ For every operation you are about to perform:
      treat silence or an unrelated reply as confirmation.
    - `DENY` → do not perform the action. Record the operation and the
      returned `reason` under "Denied actions" in `checklists/after.md`.
+4. For a `read.*` operation where you passed `attributes.daw`, also
+   check `decision.capability_available` before calling an MCP/OSC tool
+   — this is a **separate signal from `decision`, never a substitute for
+   it**:
+   - `true` → this repo's MCP/OSC adapter for that DAW actually
+     implements this read; call it.
+   - `false` → the read is still `ALLOW` (policy never forbids reading
+     state), but no MCP/OSC tool in this repo can do it for that DAW
+     (e.g. `read.tempo` on Ardour — its OSC surface has no tempo query
+     at all). This is a **capability gap, not a policy DENY**: do not
+     record it under "Denied actions". Fall back per `SKILL.md`'s
+     priority order (Computer Use, or manual read-only inspection)
+     instead.
+   - `null` → not applicable (non-`read.*` operation, or you did not
+     pass `attributes.daw`).
 
 If your current environment cannot execute code against this repo (no
 shell/Python access to it), fall back to reading `policy/deny.txt`
@@ -59,7 +74,7 @@ never invoked, not just a rule you're expected to have honored.
 
 | You're about to... | Action |
 |---|---|
-| Read tempo / tracks / clips | `{"operation": "read.tempo"}` (or `read.tracks`, `read.clips`) |
+| Read tempo / tracks / clips | `{"operation": "read.tempo"}` (or `read.tracks`, `read.clips`) — add `"attributes": {"daw": "<daw>"}` to also get `capability_available` for that DAW |
 | Save As, user asked this turn | `{"operation": "project.save", "attributes": {"mode": "save_as", "user_requested_this_turn": true}}` |
 | Save As, not sure the user asked | `{"operation": "project.save", "attributes": {"mode": "save_as"}}` |
 | Overwrite the open project | `{"operation": "project.save", "attributes": {"mode": "overwrite"}}` |

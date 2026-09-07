@@ -71,12 +71,39 @@ Policy Engineが受け取るのはこの形だけです。**自然言語は一�
   "reason": "Overwriting the currently open project is never allowed, regardless of user request.",
   "operation": "project.save",
   "target": "current",
-  "attributes": {"mode": "overwrite"}
+  "attributes": {"mode": "overwrite"},
+  "capability_available": null
 }
 ```
 
 `rule_id`と`reason`があるので、「なぜその判定になったか」を常に
 説明できます(監査可能性)。
+
+## `capability_available` — Policy判定とCapabilityの分離(重要)
+
+`capability_available`は`decision`(ALLOW/ASK/DENY)とは**別物**です。
+`operation`が`read.`で始まり、`attributes.daw`が指定されている場合
+だけ、`CAPABILITY_MATRIX`(下記)を見て`True`/`False`が入ります。
+それ以外(read以外の操作、または`daw`未指定)は常に`null`(該当なし)。
+
+- `read.tempo`はどのDAWに対しても**常にALLOW**です(ポリシー上、
+  状態の読み取りを禁止する規則は存在しません)
+- `capability_available: false`は「この操作がポリシーで禁止されている」
+  という意味では**ありません**。「このリポジトリの該当DAW用MCP/OSC
+  アダプタに、その読み取りを行うツールが実装されていない」という
+  **技術的な制約**を表すだけです
+- 具体例: `evaluate({"operation": "read.tempo", "attributes": {"daw": "ardour"}})`
+  は`decision: "ALLOW"`のまま、`capability_available: false`になります
+  (ArdourのOSCサーフェス自体にテンポ取得コマンドが無いため —
+  `mcp-ardour/README.md`参照)。この場合、Agentは「DENYされた」と
+  誤解して読み取りを諦めるのではなく、`SKILL.md`の優先順位に従って
+  別の手段(Computer Useなど)にフォールバックしてください
+- `capability_available: false`をDENYと混同して扱ってはいけません。
+  逆に、DENYされた操作を`capability_available`で回避できると考えるのも
+  誤りです — 別軸の情報です
+
+`tests/test_policy_engine.py`の`CapabilityAvailabilityTests`が、
+`CAPABILITY_MATRIX`とこのフィールドの整合性を検証します。
 
 ## Fail-closed(最重要の設計原則)
 
@@ -143,7 +170,7 @@ python3 -m policy_engine.cli '{"operation": "project.save", "attributes": {"mode
 
 ## 動作確認
 
-`tests/test_policy_engine.py`(35テスト)で以下を検証済みです。
+`tests/test_policy_engine.py`(40テスト)で以下を検証済みです。
 
 - `policy/deny.txt`の10ルールそれぞれに対応するDENYケース
 - `policy/allow.txt`の許可ケース(ALLOW)
@@ -153,6 +180,10 @@ python3 -m policy_engine.cli '{"operation": "project.save", "attributes": {"mode
   行と一致していること、deny.txtの全行がいずれかのルールでカバー
   されていること
 - `CAPABILITY_MATRIX`が`mcp-*/*/server.py`の実装と一致していること
+- `capability_available`が`decision`を変えないこと(read.\*は`daw`の
+  値に関わらず常にALLOW)、かつ`CAPABILITY_MATRIX`と一致すること
+  (Ardourの`read.tempo`が`ALLOW`かつ`capability_available: false`
+  になる、という確認済みのギャップを固定するregression testを含む)
 
 実機DAWでの検証は対象外です(`mcp-reaper`/`mcp-ableton`/`mcp-ardour`
 自体の動作確認状況は各READMEを参照してください)。
