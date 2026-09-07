@@ -37,6 +37,15 @@ Always prefer, in this order:
    action, and never for actions listed in `policy/deny.txt`
 
 Never use Computer Use to do something an MCP/OSC adapter could already do.
+**Why this order, not just "policy for policy's sake":** Computer Use
+means capturing a screenshot and reasoning over pixels every turn — for
+a multimodal agent with real desktop/screen control (e.g. Astra-style
+agents), that is real, recurring token cost and added latency per
+action, on top of being far more fragile (a moved window, a different
+zoom level, or a redrawn UI breaks it) than a single structured MCP/OSC
+call. Preferring MCP/OSC whenever it covers the action is not just
+safer, it is cheaper and more reliable every single time it's
+available.
 
 **If no MCP/OSC adapter is already configured and running, treat it as
 unavailable and drop straight to Computer Use (or manual read-only
