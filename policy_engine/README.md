@@ -186,7 +186,10 @@ Agentが操作ごとに毎回読むテキストなので、判断に不要な入
 
 `tests/test_policy_engine.py`(40テスト)で以下を検証済みです。
 CLI自体(デフォルト出力の最小化・`--full`/`--pretty`・終了コード)は
-`tests/test_cli.py`(8テスト)で別途検証しています。
+`tests/test_cli.py`(8テスト)で別途検証しています。Issue #16の
+Token/UX最適化(Step 1-3)がALLOW/ASK/DENYの判定結果やルールの並び順を
+変えていないことは`tests/test_security_regression.py`(12テスト)で
+横断的に固定しています。
 
 - `policy/deny.txt`の10ルールそれぞれに対応するDENYケース
 - `policy/allow.txt`の許可ケース(ALLOW)
