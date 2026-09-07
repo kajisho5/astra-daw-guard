@@ -3,144 +3,156 @@
 [![checks](https://github.com/kajisho5/astra-daw-guard/actions/workflows/checks.yml/badge.svg)](https://github.com/kajisho5/astra-daw-guard/actions/workflows/checks.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-AIエージェント（GPT-6 Astra、Codex、Claude Code など）が DAW を
-操作するときに従うべき禁止事項・許可事項・作業後レポートのフォーマット
-をまとめた、**AI Agent向けDAW safety / policy layer**です。特定のDAWの
-MCPコレクションではありません。特定のDAWにも限定していません。
-操作そのものは既存の MCP / OSC / Computer Use に任せ、このリポジトリは
-その前後にかぶせる「やってよいこと・悪いこと」の層です。
+🇯🇵 **日本語版: [README.ja.md](README.ja.md)**
 
-判定は2段構えです。`SKILL.md`をAgentに読ませて自然言語で守らせる層
-（人間にも読める）と、`policy_engine/`という**機械可読なALLOW/ASK/DENY
-判定エンジン**（構造化データのみを扱い、fail-closed）です。
-`checklists/during.md`が操作ごとにこのエンジンを呼ぶ具体的な手順を、
-`enforcement/`がTool実行そのものをこの判定でゲートする参照実装を
-提供します。ただし、これは**Astra自身の実行中のAgent runtimeへの
-実接続ではありません** — このリポジトリには実行中のAgentループが
-存在しないため、呼び出し側（実際のAgent実行環境）がこれらをどう使う
-かに委ねられています。「安全を保証する」ものではなく、「機械的に
-判定・監査できる」層を提供するものです。
+A **DAW safety / policy layer for AI agents**: a set of prohibitions,
+permissions, and a post-run report format that any AI agent (GPT-6
+Astra, Codex, Claude Code, etc.) should follow while operating a DAW.
+It is not a collection of MCP servers for one specific DAW, and it is
+not limited to any single DAW. Actually operating the DAW is left to
+whatever MCP / OSC / Computer Use tooling already exists — this
+repository is the "what's allowed, what isn't" layer that sits around
+that.
 
-## 防ぐこと
+Enforcement is two-layered. `SKILL.md` is a natural-language layer an
+agent reads and follows (also readable by humans), and `policy_engine/`
+is a **machine-readable ALLOW/ASK/DENY decision engine** (structured
+data only, fail-closed). `checklists/during.md` documents the concrete
+procedure for calling this engine per operation, and `enforcement/`
+provides a reference implementation that gates actual tool execution
+behind this decision. This is **not a live connection into Astra's own
+running Agent runtime** — this repository has no running Agent loop of
+its own, so how the caller (the real Agent execution environment) uses
+these pieces is up to it. This does not "guarantee safety" — it
+provides a layer that can **decide and audit mechanically**.
 
-- ネットから MIDI / サンプルを無断取得すること
-- 生成物と既存素材を混ぜて出典を黙ること
-- プロジェクトを勝手に上書き保存すること
-- Computer Use で DAW のウィンドウやレイアウトを壊すこと
+## What it prevents
 
-## やらないこと
+- Fetching MIDI / samples from the internet without permission
+- Mixing generated material with existing material without disclosing sources
+- Silently overwriting a project file
+- Breaking a DAW's window or layout via Computer Use
 
-- 新しい DAW や LiveAPI ブリッジを作ること
-- 自動作曲モデルを訓練すること
-- Computer Use のスクリーンクリック自動化を実装すること
+## What it does not do
 
-## 対応DAW
+- Build a new DAW or LiveAPI bridge
+- Train an auto-composition model
+- Implement Computer Use screen-click automation
 
-ガードレール本体（`SKILL.md` / `policy/`）は全DAW共通で使えます。加えて、
-一部のDAWには「読み取り専用MCP」を同梱しており、テンポやトラック一覧を
-安全に取得できます（書き込み系の操作は一切実装していません）。
+## Supported DAWs
 
-| DAW | 読み取り専用MCP | 経由するもの | 実機での動作確認 |
+The guardrail itself (`SKILL.md` / `policy/`) works identically across
+every DAW. In addition, some DAWs ship with a "read-only MCP" that can
+safely fetch tempo and track lists (no write operations are
+implemented anywhere).
+
+| DAW | Read-only MCP | Transport | Verified against real hardware |
 |---|---|---|---|
-| Reaper | ✅ `mcp-reaper/` | [reapy](https://github.com/RomeoDespres/reapy)（外部Pythonラッパー） | 未確認（ロジック検証のみ） |
-| Ableton Live | ✅ `mcp-ableton/` | [AbletonOSC](https://github.com/ideoforms/AbletonOSC)（Remote Script） | 未確認（擬似サーバーで検証済み） |
-| Ardour | ✅ `mcp-ardour/` | Ardour本体に内蔵のOSCサーフェス | 未確認（擬似サーバーで検証済み） |
-| Bitwig Studio | ガードレールのみ（MCPなし） | 参考: [DrivenByMoss](https://github.com/git-moss/DrivenByMoss)のOSC機能（コミュニティ製・自己責任） | 未検証・未実装（`adapters/bitwig.md`） |
-| FL Studio | ガードレールのみ（MCPなし） | 参考: [`flstudio-mcp`](https://github.com/rosasynthesiz/flstudio-mcp)（コミュニティ製・自己責任） | 未検証・未実装（`adapters/flstudio.md`） |
-| Cubase | ガードレールのみ（MCPなし） | — | 調査済み: プラットフォーム側の制約で読み取り不可（`adapters/cubase.md`） |
-| Pro Tools | ガードレールのみ（MCPなし） | — | 調査済み: EUCONはAvidパートナー限定で一般利用不可（`adapters/protools.md`） |
-| Logic Pro | ガードレールのみ（MCPなし） | — | 調査済み: 読み取り可能なAPI/OSCなし（`adapters/logicpro.md`） |
-| Studio One | ガードレールのみ（MCPなし） | — | 調査済み: 公開API/OSCなし（`adapters/studioone.md`） |
-| Cakewalk | ガードレールのみ（MCPなし） | — | 調査済み: 公開API/OSCなし（`adapters/cakewalk.md`） |
-| GarageBand | ガードレールのみ（MCPなし） | — | スクリプト機能自体が無い（`adapters/garageband.md`） |
+| Reaper | ✅ `mcp-reaper/` | [reapy](https://github.com/RomeoDespres/reapy) (external Python wrapper) | Not verified (logic-only verification) |
+| Ableton Live | ✅ `mcp-ableton/` | [AbletonOSC](https://github.com/ideoforms/AbletonOSC) (Remote Script) | Not verified (verified against a fake server) |
+| Ardour | ✅ `mcp-ardour/` | Ardour's own built-in OSC surface | Not verified (verified against a fake server) |
+| Bitwig Studio | Guardrail only (no MCP) | Reference: [DrivenByMoss](https://github.com/git-moss/DrivenByMoss)'s OSC support (community-made, use at your own risk) | Not investigated / not implemented (`adapters/bitwig.md`) |
+| FL Studio | Guardrail only (no MCP) | Reference: [`flstudio-mcp`](https://github.com/rosasynthesiz/flstudio-mcp) (community-made, use at your own risk) | Not investigated / not implemented (`adapters/flstudio.md`) |
+| Cubase | Guardrail only (no MCP) | — | Investigated: no readable surface due to platform constraints (`adapters/cubase.md`) |
+| Pro Tools | Guardrail only (no MCP) | — | Investigated: EUCON is Avid-partner-only, not generally available (`adapters/protools.md`) |
+| Logic Pro | Guardrail only (no MCP) | — | Investigated: no readable API/OSC exists (`adapters/logicpro.md`) |
+| Studio One | Guardrail only (no MCP) | — | Investigated: no public API/OSC exists (`adapters/studioone.md`) |
+| Cakewalk | Guardrail only (no MCP) | — | Investigated: no public API/OSC exists (`adapters/cakewalk.md`) |
+| GarageBand | Guardrail only (no MCP) | — | No scripting capability exists at all (`adapters/garageband.md`) |
 
-ガードレール本体はどのDAWでも同じように使えます。読み取り専用MCPが
-あるのは今のところ Reaper・Ableton Live・Ardour の3つで、いずれも実機
-での疎通は未検証です（擬似サーバーでのロジック検証は実施済み）。他の
-DAWは2026-09-07時点で個別に調査し、結果を`adapters/*.md`に記録して
-います。誇張せず、調査済みで「無い」と分かったものは「無い」と明記して
-います。
+The guardrail itself works the same on every DAW. Read-only MCPs
+currently exist for three of them — Reaper, Ableton Live, and Ardour —
+and none of the three has been verified against real hardware (logic
+has been verified against fake servers). The remaining DAWs were each
+investigated individually as of 2026-09-07, with the results recorded
+in `adapters/*.md`. Nothing here is exaggerated: where investigation
+found "this doesn't exist," that's stated plainly.
 
-各アダプタの詳細・セットアップ手順は `mcp-reaper/README.md` /
-`mcp-ableton/README.md` / `mcp-ardour/README.md` / `adapters/*.md` を
-参照してください。3つとも `python3 install.py` で自動化できる部分は
-自動化していますが、DAW側の設定変更（例: Ableton の Preferences で
-Control Surface を選ぶ）は各アプリの外からは変更できないため手動です。
-MCPのセットアップが不要な場合は、ガードレール本体（`SKILL.md` /
-`policy/`）だけでも機能します。
+See `mcp-reaper/README.md` / `mcp-ableton/README.md` /
+`mcp-ardour/README.md` / `adapters/*.md` for setup details on each
+adapter. All three automate what can be automated via
+`python3 install.py`, but changes on the DAW's own side (e.g. picking
+a Control Surface in Ableton's Preferences) can't be done from outside
+the app and remain manual. If you don't need any MCP setup, the
+guardrail itself (`SKILL.md` / `policy/`) works on its own.
 
-## Astra など外部エージェントへの渡し方
+## Handing this to Astra or another external agent
 
-このリポジトリの URL を渡すだけで使わせたい場合、次のように指示してください
-（そのままコピー可）:
+If you just want to hand over this repository's URL and have an agent
+follow it, give it an instruction like this (copy-paste ready):
 
 ```text
-このGitHubリポジトリを読んで、書かれたルールに従って作業してください:
+Read this GitHub repository and follow the rules written in it:
 https://github.com/kajisho5/astra-daw-guard
 
-特に以下は必ず守ってください:
-1. AGENTS.md と SKILL.md を読む
-2. policy/deny.txt にある禁止事項を破らない
-3. 作業後は checklists/after.md のフォーマットで報告する
+In particular, make sure to:
+1. Read AGENTS.md and SKILL.md
+2. Never break a prohibition listed in policy/deny.txt
+3. Report your work afterward in the format in checklists/after.md
 ```
 
-エージェントがリポジトリ内を自分でたどれない場合に備えて、主要ファイルの
-直リンクも渡しておくと確実です。
+In case the agent can't navigate the repository on its own, it's
+worth also handing it direct links to the key files:
 
-- ルール本体: https://raw.githubusercontent.com/kajisho5/astra-daw-guard/main/SKILL.md
-- 最優先の禁止事項: https://raw.githubusercontent.com/kajisho5/astra-daw-guard/main/policy/deny.txt
-- 許可事項: https://raw.githubusercontent.com/kajisho5/astra-daw-guard/main/policy/allow.txt
-- 報告フォーマット: https://raw.githubusercontent.com/kajisho5/astra-daw-guard/main/checklists/after.md
+- The rules themselves: https://raw.githubusercontent.com/kajisho5/astra-daw-guard/main/SKILL.md
+- Top-priority prohibitions: https://raw.githubusercontent.com/kajisho5/astra-daw-guard/main/policy/deny.txt
+- Permissions: https://raw.githubusercontent.com/kajisho5/astra-daw-guard/main/policy/allow.txt
+- Report format: https://raw.githubusercontent.com/kajisho5/astra-daw-guard/main/checklists/after.md
 
-念のため、最低限守るべき禁止事項を`policy/deny.txt`の10行全てここにも
-書いておきます（正本は `policy/deny.txt`。内容が食い違ったら
-`policy/deny.txt` が優先）:
+Just in case, here are all 10 minimum prohibitions from
+`policy/deny.txt` reproduced here as well (the canonical source is
+`policy/deny.txt`; if this ever disagrees with it, `policy/deny.txt`
+wins):
 
-- ユーザーが今のターンで明示的に許可していない限り、ネットから
-  `.mid` / `.midi` / `.kar` を取得しない
-- BitMidi・MIDIWorld・Free MIDI など出所不明の MIDI 倉庫サイトからは
-  取得しない
-- 「パブリックドメイン」という表示だけでは信頼しない。ホストが
-  `policy/license-allowlist.txt` に無ければ取得前に確認する
-- 開いているプロジェクトファイルを上書き保存しない（保存する場合は
-  必ず Save As、かつユーザーが保存を依頼した場合のみ）
-- 生成したMIDIと外部から取り込んだ素材を、出典を書かずに同じトラックへ
-  混ぜない
-- DAW のウィンドウ位置・サイズを変更しない
-- 表示倍率・配色テーマ・キー割り当てを変更しない
-- プラグインのインストールやライセンスダイアログへの応答をしない
-- プロジェクトファイル・ステム・未公開の楽曲を、このセッションで
-  使っているモデルAPI以外へ送信しない
-- MCP/OSC で同じ操作ができるなら Computer Use を使わない
+- Do not fetch `.mid` / `.midi` / `.kar` files from the internet
+  unless the user has explicitly approved it in the current turn
+- Do not fetch from MIDI-dump sites of unknown provenance such as
+  BitMidi, MIDIWorld, or Free MIDI
+- Don't trust a "public domain" label alone — if the host isn't on
+  `policy/license-allowlist.txt`, confirm before fetching
+- Don't overwrite an open project file (if saving, always Save As,
+  and only when the user asked for a save)
+- Don't mix generated MIDI with externally-fetched material into the
+  same track without disclosing the source
+- Don't change the DAW window's position or size
+- Don't change display scale, color theme, or key bindings
+- Don't install plugins or respond to license dialogs
+- Don't send project files, stems, or unreleased music to anything
+  other than the model API used in this session
+- Don't use Computer Use when the same operation can be done via
+  MCP/OSC
 
-全文は `policy/deny.txt`、実行手順は `SKILL.md` を参照してください。
+See `policy/deny.txt` for the full text and `SKILL.md` for the
+procedure.
 
-## Claude Code / Codex での使い方
+## Using it with Claude Code / Codex
 
-このリポジトリを開いた状態で:
+With this repository open:
 
-1. AGENTS.md と SKILL.md を読め
-2. policy/deny.txt に当たる操作をするな
-3. 作業後は checklists/after.md のフォーマットで報告しろ
+1. Read AGENTS.md and SKILL.md
+2. Don't perform an operation covered by policy/deny.txt
+3. Report your work afterward in the format in checklists/after.md
 
-## 現在の状態
+## Current status
 
-最新版は `v0.9.1`。Policy Engine（`policy_engine/`）・Enforcement
-Boundary（`enforcement/`）ともに実装済み、テスト135件全通過。詳しい
-開発の経緯は `CHANGELOG.md`、現状評価と今後の方針は `ROADMAP.md` を
-参照してください。
+The latest version is `v0.9.1`. Both the Policy Engine
+(`policy_engine/`) and the Enforcement Boundary (`enforcement/`) are
+implemented, with all 135 tests passing. See `CHANGELOG.md` for the
+full development history, and `ROADMAP.md` for the current assessment
+and what's next.
 
-正直な限界（誇張しません）: 実機DAWでの動作確認・実際のAstra Agent
-runtimeへの結線・書き込み可能なMCP/OSCアダプタは、いずれもこの
-リポジトリの中には存在しません。理由と詳細は `ROADMAP.md` を参照。
+Honest limitations (not exaggerated): none of the following exist
+inside this repository — verification against real DAW hardware, a
+live connection into an actual Astra Agent runtime, or a write-capable
+MCP/OSC adapter. See `ROADMAP.md` for the reasoning and details.
 
-## 貢献
+## Contributing
 
-このリポジトリ自体の開発に参加する場合は `CONTRIBUTING.md` を先に
-読んでください。特に `policy_engine/` / `enforcement/` を変更する
-PRは、独立したレビュー（`code-review`スキル等）を通すことを必須と
-しています。
+If you want to work on this repository itself, read `CONTRIBUTING.md`
+first. In particular, any PR touching `policy_engine/` or
+`enforcement/` requires an independent review (e.g. the `code-review`
+skill) before merging.
 
-## ライセンス
+## License
 
 [MIT License](LICENSE)
