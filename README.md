@@ -2,9 +2,17 @@
 
 AIエージェント（GPT-6 Astra、Codex、Claude Code など）が DAW を
 操作するときに従うべき禁止事項・許可事項・作業後レポートのフォーマット
-をまとめたガードレールリポジトリです。特定のDAWに限定していません。
+をまとめた、**AI Agent向けDAW safety / policy layer**です。特定のDAWの
+MCPコレクションではありません。特定のDAWにも限定していません。
 操作そのものは既存の MCP / OSC / Computer Use に任せ、このリポジトリは
 その前後にかぶせる「やってよいこと・悪いこと」の層です。
+
+判定は2段構えです。`SKILL.md`をAgentに読ませて自然言語で守らせる層
+（人間にも読める）と、`policy_engine/`という**機械可読なALLOW/ASK/DENY
+判定エンジン**（構造化データのみを扱い、fail-closed）です。後者は
+現時点ではロジック単体の検証に留まり、実際のAgentの行動選択に
+組み込むかどうかは呼び出し側の実装次第です。「安全を保証する」もの
+ではなく、「機械的に判定・監査できる」層を提供するものです。
 
 ## 防ぐこと
 
@@ -143,3 +151,25 @@ Studio One, Cakewalk, GarageBand）を2026-09-07に調査。
 - [x] Cubase, Pro Tools, Logic Pro, Studio One, Cakewalk, GarageBand —
       いずれも読み取り可能な外部API/OSCが存在しないことを個別に調査・
       確認。各`adapters/*.md`に根拠を記載
+
+## v0.5（Policy Engine — Issue [#10](https://github.com/kajisho5/astra-daw-guard/issues/10)）
+
+「`tools/deny_check.py`はheuristicであり、authoritativeな強制ではない」
+という課題への対応。`policy_engine/`を新設し、構造化された Action を
+ALLOW / ASK / DENY で機械的に判定できるようにした。詳細は
+`policy_engine/README.md`。
+
+- [x] Action Schema（`operation` / `target` / `attributes`）を定義
+- [x] ALLOW / ASK / DENY の3段階判定を実装、fail-closed（未知の操作・
+      不正な構造は常にDENY）
+- [x] 各ルールが`policy/deny.txt` / `policy/allow.txt`の該当行を直接
+      参照し、テストで同期をチェック（乖離したらCIが落ちる）
+- [x] Capability Model — `mcp-reaper` / `mcp-ableton` / `mcp-ardour`の
+      実装済みツールから機械的に導出（Ardourはtempo取得ツールが無い
+      ことを反映）。`computer_use.invoke`判定に使用
+- [x] `tools/deny_check.py`は変更せず、heuristic警告ツールとして維持。
+      READMEで役割を明確に分離
+- [x] テスト35件（ALLOW/ASK/DENY各ケース、fail-closedケース、
+      source同期チェック、capability整合性チェック）— 全て通過
+- [ ] 実際のAgentの行動選択への組み込み — 今回の対象外。ロジック単体の
+      提供に留まる

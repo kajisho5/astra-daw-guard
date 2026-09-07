@@ -26,6 +26,12 @@ jobs:
       - name: Byte-compile tools/*.py
         run: python3 -m py_compile tools/*.py
 
+      - name: Byte-compile policy_engine/*.py
+        run: python3 -m py_compile policy_engine/*.py
+
+      - name: Run policy_engine tests
+        run: python3 -m unittest tests.test_policy_engine -v
+
       - name: Validate JSON files parse
         run: |
           python3 -c "import json; json.load(open('tools/refusal_messages.json'))"
