@@ -40,17 +40,21 @@ MCPコレクションではありません。特定のDAWにも限定してい�
 
 ガードレール本体（`SKILL.md` / `policy/`）は全DAW共通で使えます。加えて、
 一部のDAWにはMCPを同梱しており、テンポやトラック一覧を安全に取得
-できます。ReaperとAbleton Liveには小規模な書き込みツール（トラック
-作成・MIDI書き込み・[Reaperのみ]別名保存）もあります。Ardourの
-MCPは読み取り専用のままです。書き込みツールは全て上記のPolicy Engine /
-Enforcement Boundaryでゲートされています — 各ツールが正確に何をする・
-しないかは`mcp-reaper/README.md` / `mcp-ableton/README.md`を参照して
-ください。
+できます。ReaperとAbleton Liveには書き込みツール（トラック作成・
+MIDI書き込み・ミキサー制御[volume/pan/mute/solo]・デバイスパラメータ
+変更・トランスポート制御・テンポ変更・[Reaperのみ]別名保存）も
+あります。Ableton Liveには保存ツールとInstrument Rackのチェーン
+切り替えツールがありません — 経由先のAbletonOSC自体にそれらのOSC
+アドレスが1つも存在しないことをソースコードで確認済みで、推測では
+ありません。Ardourのみ読み取り専用のままです。書き込みツールは全て
+上記のPolicy Engine / Enforcement Boundaryでゲートされています —
+各ツールが正確に何をする・しないかは`mcp-reaper/README.md` /
+`mcp-ableton/README.md`を参照してください。
 
 | DAW | MCP | 書き込みツール | 経由するもの | 実機での動作確認 |
 |---|---|---|---|---|
 | Reaper | ✅ `mcp-reaper/` | ✅ トラック作成 / MIDI書き込み / 別名保存 | [reapy](https://github.com/RomeoDespres/reapy)（外部Pythonラッパー） | 未確認（ロジック検証のみ） |
-| Ableton Live | ✅ `mcp-ableton/` | ✅ トラック作成 / MIDI書き込み | [AbletonOSC](https://github.com/ideoforms/AbletonOSC)（Remote Script） | 未確認（擬似サーバーで検証済み） |
+| Ableton Live | ✅ `mcp-ableton/` | ✅ トラック作成 / MIDI書き込み / ミキサー / デバイスパラメータ / トランスポート / テンポ | [AbletonOSC](https://github.com/ideoforms/AbletonOSC)（Remote Script） | 未確認（擬似サーバーで検証済み） |
 | Ardour | ✅ `mcp-ardour/` | 読み取り専用 | Ardour本体に内蔵のOSCサーフェス | 未確認（擬似サーバーで検証済み） |
 | Bitwig Studio | ガードレールのみ（MCPなし） | — | 参考: [DrivenByMoss](https://github.com/git-moss/DrivenByMoss)のOSC機能（コミュニティ製・自己責任） | 未検証・未実装（`adapters/bitwig.md`） |
 | FL Studio | ガードレールのみ（MCPなし） | — | 参考: [`flstudio-mcp`](https://github.com/rosasynthesiz/flstudio-mcp)（コミュニティ製・自己責任） | 未検証・未実装（`adapters/flstudio.md`） |
@@ -64,8 +68,8 @@ Enforcement Boundaryでゲートされています — 各ツールが正確に�
 ガードレール本体はどのDAWでも同じように使えます。MCPがあるのは今の
 ところ Reaper・Ableton Live・Ardour の3つで、いずれも実機での疎通は
 未検証です（擬似サーバーでのロジック検証は実施済み）。ReaperとAbleton
-LiveのMCPには書き込みツールもあります（Issue #44）。Ardourは読み取り
-専用のままです。他のDAWは2026-09-07時点で個別に調査し、結果を
+LiveのMCPには書き込みツールもあります（Issue #44、#46）。Ardourは
+読み取り専用のままです。他のDAWは2026-09-07時点で個別に調査し、結果を
 `adapters/*.md`に記録しています。誇張せず、調査済みで「無い」と
 分かったものは「無い」と明記しています。
 
@@ -133,10 +137,10 @@ https://github.com/kajisho5/astra-daw-guard
 
 ## 現在の状態
 
-最新版は `v0.9.2`。Policy Engine（`policy_engine/`）・Enforcement
-Boundary（`enforcement/`）ともに実装済み、テスト152件全通過。Reaperと
+最新版は `v0.9.3`。Policy Engine（`policy_engine/`）・Enforcement
+Boundary（`enforcement/`）ともに実装済み、テスト182件全通過。Reaperと
 Ableton LiveにはPolicy Engineでゲートされた書き込みツールが追加
-されました（Issue #44）。詳しい開発の経緯は `CHANGELOG.md`、現状評価と
+されました（Issue #44、#46）。詳しい開発の経緯は `CHANGELOG.md`、現状評価と
 今後の方針は `ROADMAP.md` を参照してください。
 
 正直な限界（誇張しません）: 実機DAWでの動作確認・実際のAstra Agent
