@@ -35,21 +35,24 @@ Ableton Live限定で解除された。`mcp-ardour`は引き続き読み取り�
 
 ## Current state（2026-09-07時点）
 
-- `main` HEAD: `cc46e4a`（このPRのbase。マージ後さらに進む）
-- テスト: 152件、全通過（`python3 -m unittest discover -s tests -p "test_*.py" -v`）
-- GitHub Issues: #10, #12, #14, #16, #25, #26, #31, #34, #37, #38 は
+- `main` HEAD: `004adcf`（v0.9.3マージ後、このPRのbase）
+- テスト: 184件、全通過（`python3 -m unittest discover -s tests -p "test_*.py" -v`）
+- GitHub Issues: #10, #12, #14, #16, #25, #26, #31, #34, #37, #38, #44, #46 は
   全てCLOSED（重複なし確認済み）。OPENのIssueは #32
   （リモートfeatureブランチの削除 — この実行環境のgit権限制限
   （`HTTP 403`）でセッション側からは対応不可、ユーザーの手動削除待ち）
-  と #44（本更新で実装、close予定）
+  のみ
 - ガードレール本体（`SKILL.md` / `policy/`）は全DAW共通
 - MCP: Reaper / Ableton Live / Ardour の3つ、いずれも実機未検証
   （擬似サーバーでのロジック検証のみ）
 - **書き込み可能なMCPツールがReaper / Ableton Liveに存在する**
-  （Issue #44）: `create_track` / `write_generated_midi`（両DAW）、
-  `save_project_as`（Reaperのみ、AbletonOSCにSave用アドレスが無いため）。
-  全て`enforcement.enforce()`経由でPolicy Engineの判定を必ず通してから
-  実行される。`mcp-ardour`は引き続き読み取り専用
+  （Issue #44, #46）: `create_track` / `write_generated_midi`（両DAW）、
+  `save_project_as`（Reaperのみ）、`set_mixer_property` /
+  `set_device_parameter` / `control_transport` / `set_tempo`
+  （Abletonのみ）。全て`enforcement.enforce()`経由でPolicy Engineの
+  判定を必ず通してから実行される。`mcp-ardour`は引き続き読み取り専用。
+  Ableton側にSave/Export・Instrument Rackチェーン切り替えのツールは
+  無い（AbletonOSCに対応するアドレスが無いことをソースコードで確認済み）
 - Policy Engine（`policy_engine/`）と Enforcement Boundary
   （`enforcement/`）が実装済み。Enforcement Boundaryは今回初めて、
   モック化されたテストダブルではなく実際のDAW書き込み経路
@@ -73,7 +76,8 @@ Ableton Live限定で解除された。`mcp-ardour`は引き続き読み取り�
 | v0.9 | 次フェーズ監査、`evaluate_plan()`（計画の事前一括チェック）、`DAWStateSnapshot`（監査文脈用、判定ロジックは無変更） | Issue #25, #26, PR #27-#29 |
 | v0.9.1 | 自己レビュー・品質改善(新機能なし): CI test-discovery自動化、`policy_engine`のfail-closed型安全性バグ3件の発見・修正、`CONTRIBUTING.md`新設、`tools/benchmark.py`のゼロ反復クラッシュ修正、`mcp-ardour`の`query_list()`タイムアウト予算修正、README/ROADMAP同期、READMEの英語化(看板)・`CHANGELOG.md`分離 | Issue #31, #34, #37, #38, PR #33, #35, #36, #39-#43 |
 | v0.9.2 | Reaper / Ableton Liveへの書き込み可能MCPツール追加（`create_track` / `write_generated_midi` / [Reaperのみ]`save_project_as`）。「書き込みアダプタを作らない」非目的を明示的合意により解除。Enforcement Boundaryを実際のDAW書き込み経路（fake経由、実機未検証）に初めて接続 | Issue #44 |
-| v0.9.2.1 | 認可バイパスの修正（新機能なし）: `MIDI_FETCH_NO_APPROVAL`/`MIDI_FETCH_NOT_ALLOWLISTED`/`MIDI_FETCH_ALLOWED`/`SAVE_AS_APPROVED`の4ルールがtruthinessチェックで書かれており、`"false"`（Pythonではtruthy）等を渡すと意図しないASK/ALLOWに漏れる欠陥（CWE-863）を発見・修正 | — |
+| v0.9.3 | Ableton Liveのミキサー制御・デバイスパラメータ変更・トランスポート制御・テンポ変更を追加（`set_mixer_property` / `set_device_parameter` / `control_transport` / `set_tempo`）。`policy/allow.txt`に4行追加、対応する新オペレーション4つをPolicy Engineに追加。Instrument Rackのチェーン切り替えはAbletonOSCに対応アドレスが無いため実装せず | Issue #46 |
+| v0.9.3.1 | 認可バイパスの修正（新機能なし）: `MIDI_FETCH_NO_APPROVAL`/`MIDI_FETCH_NOT_ALLOWLISTED`/`MIDI_FETCH_ALLOWED`/`SAVE_AS_APPROVED`の4ルールがtruthinessチェックで書かれており、`"false"`（Pythonではtruthy）等を渡すと意図しないASK/ALLOWに漏れる欠陥（CWE-863）を発見・修正 | — |
 
 ## 前回の監査フェーズ — 記録（2026-09-07実施）
 
@@ -149,10 +153,39 @@ B/D/E/Fは「今回不採用」であり「永久に不要」ではない。D/E/
   （`_wait_until`）に依存しており、これは実機未検証（`mcp-ableton/README.md`参照）
 - テスト135→152件、全通過
 
+## v0.9.3の実装結果（Issue #46、ミキサー・デバイス・トランスポート・テンポ）
+
+- **Issue #46**: `mcp-ableton`に`set_mixer_property` /
+  `set_device_parameter` / `control_transport` / `set_tempo`を追加。
+  `policy/allow.txt`に4行、`policy_engine/rules.py`に対応する
+  ルール4オペレーション分を追加（`track.mixer_change` /
+  `device.param_change` / `transport.control` / `tempo.change`）。
+  既存の`track.create`/`midi.write`と同じ「GEN-トラック＝サンドボックス」
+  の設計を踏襲
+- Instrument Rackのチェーン切り替えはユーザーからの要望に含まれていたが、
+  AbletonOSCに対応するOSCアドレスが1つも無いことをソースコードで確認し、
+  実装しなかった（無いものを実装したふりをしない、という一貫した方針）
+- `policy_engine/rules.py`の既存ルール・`policy/deny.txt`・`mcp-reaper`・
+  `mcp-ardour`・`enforcement/boundary.py`は無変更
+- テスト152件→182件、全通過（マージ前レビュー計5件の指摘のうち全て修正、詳細は`CHANGELOG.md`のv0.9.3参照）
+
+## v0.9.3.1の実装結果（認可バイパス修正、新機能なし）
+
+v0.9.3をCodeRabbitがレビューした際に見つかった`tempo.change`ルールの
+truthinessバグ（CWE-863、v0.9.3自身の中で修正済み）と同じパターンを
+`policy_engine/rules.py`全体で検索し、v0.9.3より前からmainにマージ
+済みだった`MIDI_FETCH_NO_APPROVAL` / `MIDI_FETCH_NOT_ALLOWLISTED` /
+`MIDI_FETCH_ALLOWED` / `SAVE_AS_APPROVED`の4ルールにも同一の欠陥を発見・
+修正した。詳細は`CHANGELOG.md`のv0.9.3.1参照。
+
+- 該当4ルールのpredicateのみ変更。`rule_id`・順序・`decision`・
+  `policy/deny.txt` / `policy/allow.txt`との対応関係は無変更
+- テスト182件→184件、全通過
+
 ## Next phase
 
-機能面で採用済み・未着手のIssueは無い（Issue #44は本更新で実装済み、
-close予定）。OPENのIssueは#32（リモートブランチ削除、環境のgit権限制限
+機能面で採用済み・未着手のIssueは無い（Issue #44・#46ともにCLOSED済み）。
+OPENのIssueは#32（リモートブランチ削除、環境のgit権限制限
 でセッション側からは対応不可）のみで、これはユーザーの手動対応待ち。
 次に何をやるかは、このリポジトリを再監査するか、ユーザーからの新しい
 要望を起点に決める。候補としては、上記「非目的(恒久)」に記載の通り

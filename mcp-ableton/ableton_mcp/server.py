@@ -31,6 +31,7 @@ confirmation that AbletonOSC never sends.
 
 from __future__ import annotations
 
+import struct
 import time
 
 from mcp.server.mcpserver import MCPServer
@@ -73,6 +74,17 @@ def _track_property(track_index: int, prop: str) -> object:
     if len(reply) >= 2 and reply[0] == track_index:
         return reply[1]
     return reply[0] if reply else None
+
+
+def _find_track_index(track_name: str) -> int:
+    """Return the 0-based index of the track named `track_name`, or
+    raise ValueError if no such track exists.
+    """
+    (num_tracks,) = _osc().query("/live/song/get/num_tracks")
+    for i in range(num_tracks):
+        if _track_property(i, "name") == track_name:
+            return i
+    raise ValueError(f"No track named {track_name!r} exists. Call create_track first.")
 
 
 @mcp.tool()
@@ -129,9 +141,37 @@ def get_tracks() -> list[dict]:
     return tracks
 
 
-def _wait_until(read, matches, *, attempts: int = 5, delay: float = 0.2):
-    """Poll `read()` until it returns `matches` or `attempts` is
-    exhausted, then return whatever `read()` last returned either way.
+def _as_osc_float32(value: float) -> float:
+    """Round a Python float to the nearest float32, matching what OSC
+    actually transmits on the wire."""
+    return struct.unpack("<f", struct.pack("<f", value))[0]
+
+
+def _approx_equal(a: object, b: object) -> bool:
+    """Float32-tolerant equality for confirming a float write landed.
+
+    OSC transmits floats as 32-bit, so a value read back after being
+    sent (e.g. a volume or tempo) may differ from the original Python
+    float by float32 rounding even when the write worked correctly --
+    exact `==` would be too strict. A large fixed tolerance would be
+    too loose in the other direction: it could confirm a genuinely
+    dropped write as if it had landed, whenever the pre-existing value
+    happened to already be close to the requested one. Rounding both
+    values to their float32 wire representation and comparing that is
+    tight enough to catch a dropped write while tolerant enough for
+    the rounding OSC itself introduces. Falls back to `==` for
+    non-numeric values (e.g. track names).
+    """
+    try:
+        return _as_osc_float32(float(a)) == _as_osc_float32(float(b))
+    except (TypeError, ValueError):
+        return a == b
+
+
+def _wait_until(read, matches, *, attempts: int = 5, delay: float = 0.2, is_close=None):
+    """Poll `read()` until it returns `matches` (per `is_close`, default
+    `==`) or `attempts` is exhausted, then return whatever `read()`
+    last returned either way.
 
     AbletonOSC's write addresses send no reply (see module docstring),
     so a write's effect can only be observed by re-querying state --
@@ -139,9 +179,10 @@ def _wait_until(read, matches, *, attempts: int = 5, delay: float = 0.2):
     after the `send()` returns. This is a documented, real timing
     assumption, unverified against real Ableton Live (see README.md).
     """
+    check = is_close or (lambda a, b: a == b)
     value = read()
     for _ in range(attempts - 1):
-        if value == matches:
+        if check(value, matches):
             return value
         time.sleep(delay)
         value = read()
@@ -206,13 +247,7 @@ def write_generated_midi(
     }
 
     def _do() -> dict:
-        (num_tracks,) = _osc().query("/live/song/get/num_tracks")
-        track_index = next(
-            (i for i in range(num_tracks) if _track_property(i, "name") == track_name),
-            None,
-        )
-        if track_index is None:
-            raise ValueError(f"No track named {track_name!r} exists. Call create_track first.")
+        track_index = _find_track_index(track_name)
         length_beats = max((note["start_time"] + note["duration"] for note in notes), default=1.0)
         _osc().send("/live/clip_slot/create_clip", track_index, clip_index, length_beats)
         note_args: list = [track_index, clip_index]
@@ -245,6 +280,193 @@ def write_generated_midi(
                 "assuming this failed outright."
             )
         return {"track": track_name, "clip_index": clip_index, "notes_written": written}
+
+    return enforce(action, _do, approved=approved)
+
+
+_MIXER_PARAM_ADDRESSES = {
+    "volume": "/live/track/set/volume",
+    "pan": "/live/track/set/panning",
+    "mute": "/live/track/set/mute",
+    "solo": "/live/track/set/solo",
+}
+
+
+@mcp.tool()
+def set_mixer_property(track_name: str, param: str, value: float, approved: bool = False) -> dict:
+    """Set a mixer property on an existing track: `param` must be one
+    of "volume", "pan", "mute", "solo".
+
+    Gated by the Policy Engine (see policy/allow.txt, rule
+    MIXER_CHANGE_ON_GEN_TRACK / MIXER_CHANGE_ON_OTHER_TRACK): auto-ALLOWed
+    only when `track_name` starts with `GEN-`; any other track requires
+    `approved=True` after the user has explicitly confirmed this change
+    in the current turn (ASK otherwise).
+
+    Value ranges are whatever Ableton's `mixer_device.volume`/`panning`
+    Parameter objects accept -- AbletonOSC's own source and Ableton's
+    published Live Object Model reference do not state the exact
+    numeric range or unity-gain value, so this has NOT been
+    independently confirmed in this environment (community references
+    describe 0.0-1.0 for volume with ~0.85 as unity gain, and -1.0-1.0
+    for panning, but treat that as unverified until checked against
+    real Ableton Live). `mute`/`solo` only accept a boolean or 0/1 --
+    anything else raises `ValueError` rather than silently coercing it
+    (e.g. `0.5` would otherwise send `1` over OSC while the recorded
+    Action and audit log kept `0.5`, an integrity mismatch).
+    """
+    if param not in _MIXER_PARAM_ADDRESSES:
+        raise ValueError(f"param must be one of {sorted(_MIXER_PARAM_ADDRESSES)}, got {param!r}")
+
+    if param in ("mute", "solo"):
+        if not isinstance(value, bool) and value not in (0, 1):
+            raise ValueError(f"{param} must be a boolean or 0/1, got {value!r}")
+        value = int(bool(value))
+
+    action = {
+        "operation": "track.mixer_change",
+        "attributes": {"track": track_name, "param": param, "value": value},
+    }
+
+    def _do() -> dict:
+        track_index = _find_track_index(track_name)
+        wire_value = value
+        address = _MIXER_PARAM_ADDRESSES[param]
+        _osc().send(address, track_index, wire_value)
+        prop = address.rsplit("/", 1)[-1]  # e.g. "/live/track/set/panning" -> "panning"
+        actual = _wait_until(
+            lambda: _track_property(track_index, prop),
+            matches=wire_value,
+            is_close=_approx_equal,
+        )
+        if not _approx_equal(actual, wire_value):
+            raise AbletonWriteUnconfirmed(
+                f"Sent {param}={wire_value!r} to track {track_name!r}, but re-reading "
+                f"it still shows {actual!r} after retrying. Either the write didn't "
+                "take effect, or Ableton Live is slower to apply it than this tool's "
+                "retry window -- check the track in Live before assuming this failed "
+                "outright."
+            )
+        return {"track": track_name, "param": param, "value": actual}
+
+    return enforce(action, _do, approved=approved)
+
+
+@mcp.tool()
+def set_device_parameter(
+    track_name: str, device_index: int, param_index: int, value: float, approved: bool = False
+) -> dict:
+    """Set a device parameter's value on an existing track's device.
+
+    Gated by the Policy Engine (see policy/allow.txt, rule
+    DEVICE_PARAM_CHANGE_ON_GEN_TRACK / DEVICE_PARAM_CHANGE_ON_OTHER_TRACK):
+    auto-ALLOWed only when `track_name` starts with `GEN-`; any other
+    track requires `approved=True` after explicit user confirmation
+    this turn.
+
+    This tool does not enumerate devices/parameters itself -- use
+    AbletonOSC's own `/live/device/get/parameters/name` (not wrapped
+    here) to find `device_index`/`param_index` first. Value range
+    depends entirely on the specific parameter (AbletonOSC exposes
+    `/live/device/get/parameters/min`/`max` for this, also not wrapped
+    here); passing an out-of-range value is Live's own behavior to
+    reject or clamp, not something this tool validates.
+    """
+    action = {
+        "operation": "device.param_change",
+        "attributes": {
+            "track": track_name,
+            "device_index": device_index,
+            "param_index": param_index,
+            "value": value,
+        },
+    }
+
+    def _do() -> dict:
+        track_index = _find_track_index(track_name)
+        _osc().send("/live/device/set/parameter/value", track_index, device_index, param_index, value)
+
+        def _current_value():
+            reply = _osc().query("/live/device/get/parameter/value", track_index, device_index, param_index)
+            # Reply is (track_index, device_index, param_index, value) --
+            # confirmed against AbletonOSC's device_get_parameter_value.
+            return reply[-1] if reply else None
+
+        actual = _wait_until(_current_value, matches=value, is_close=_approx_equal)
+        if not _approx_equal(actual, value):
+            raise AbletonWriteUnconfirmed(
+                f"Sent param_index={param_index} value={value!r} to track {track_name!r} "
+                f"device {device_index}, but re-reading it still shows {actual!r} after "
+                "retrying. Either the write didn't take effect, or Ableton Live is "
+                "slower to apply it than this tool's retry window -- check the device "
+                "in Live before assuming this failed outright."
+            )
+        return {"track": track_name, "device_index": device_index, "param_index": param_index, "value": actual}
+
+    return enforce(action, _do, approved=approved)
+
+
+_TRANSPORT_ADDRESSES = {"play": "/live/song/start_playing", "stop": "/live/song/stop_playing"}
+
+
+@mcp.tool()
+def control_transport(action: str) -> dict:
+    """Start or stop playback. `action` must be "play" or "stop".
+
+    Always ALLOWed (see policy/allow.txt, rule TRANSPORT_CONTROL) --
+    starting/stopping playback changes no project data.
+    """
+    if action not in _TRANSPORT_ADDRESSES:
+        raise ValueError(f"action must be one of {sorted(_TRANSPORT_ADDRESSES)}, got {action!r}")
+
+    policy_action = {"operation": "transport.control", "attributes": {"action": action}}
+
+    def _do() -> dict:
+        _osc().send(_TRANSPORT_ADDRESSES[action])
+        expected_playing = action == "play"
+        actual_playing = _wait_until(
+            lambda: bool(_osc().query("/live/song/get/is_playing")[0]), matches=expected_playing
+        )
+        if actual_playing != expected_playing:
+            raise AbletonWriteUnconfirmed(
+                f"Sent {action!r}, but /live/song/get/is_playing still reports "
+                f"{actual_playing!r} after retrying. Either the write didn't take "
+                "effect, or Ableton Live is slower to apply it than this tool's retry "
+                "window -- check the transport in Live before assuming this failed "
+                "outright."
+            )
+        return {"action": action, "is_playing": actual_playing}
+
+    return enforce(policy_action, _do)
+
+
+@mcp.tool()
+def set_tempo(bpm: float, user_requested_this_turn: bool = False, approved: bool = False) -> dict:
+    """Change the project's tempo (BPM).
+
+    Gated by the Policy Engine (see policy/allow.txt, rule
+    TEMPO_CHANGE_APPROVED / TEMPO_CHANGE_UNCONFIRMED): auto-ALLOWed
+    only when `user_requested_this_turn=True`; otherwise ASK, since a
+    tempo change affects the timing of everything already in the set.
+    """
+    action = {
+        "operation": "tempo.change",
+        "attributes": {"bpm": bpm, "user_requested_this_turn": user_requested_this_turn},
+    }
+
+    def _do() -> dict:
+        _osc().send("/live/song/set/tempo", bpm)
+        actual_bpm = _wait_until(
+            lambda: _osc().query("/live/song/get/tempo")[0], matches=bpm, is_close=_approx_equal
+        )
+        if not _approx_equal(actual_bpm, bpm):
+            raise AbletonWriteUnconfirmed(
+                f"Sent tempo={bpm!r}, but re-reading it still shows {actual_bpm!r} "
+                "after retrying. Either the write didn't take effect, or Ableton Live "
+                "is slower to apply it than this tool's retry window -- check the "
+                "tempo in Live before assuming this failed outright."
+            )
+        return {"bpm": actual_bpm}
 
     return enforce(action, _do, approved=approved)
 

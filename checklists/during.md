@@ -97,6 +97,10 @@ never invoked, not just a rule you're expected to have honored.
 | Write generated MIDI into a new track | `{"operation": "midi.write", "attributes": {"source": "generated", "track": "GEN-<name>"}}` |
 | Create a new track for generated content | `{"operation": "track.create", "attributes": {"name": "GEN-<name>"}}` |
 | Mix generated + imported material on one track | `{"operation": "track.mix_sources", "attributes": {"labeled": true}}` (or `false` if you have not labeled it) |
+| Change volume/pan/mute/solo on a track | `{"operation": "track.mixer_change", "attributes": {"track": "<name>", "param": "volume", "value": 0.7}}` — auto-ALLOW only if `<name>` starts with `GEN-` |
+| Change a device parameter on a track | `{"operation": "device.param_change", "attributes": {"track": "<name>", "device_index": 0, "param_index": 0, "value": 0.5}}` — auto-ALLOW only if `<name>` starts with `GEN-` |
+| Start or stop playback | `{"operation": "transport.control", "attributes": {"action": "play"}}` (or `"stop"`) — always ALLOW |
+| Change tempo (BPM), user asked this turn | `{"operation": "tempo.change", "attributes": {"bpm": 128.0, "user_requested_this_turn": true}}` |
 | Use Computer Use for some capability | `{"operation": "computer_use.invoke", "attributes": {"daw": "<daw>", "capability": "read.tempo"}}` |
 | Move/resize/retile a DAW window | `{"operation": "daw.window_change", "attributes": {"action": "move"}}` |
 | Install a plugin / accept a license dialog | `{"operation": "daw.plugin_install"}` |

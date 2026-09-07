@@ -97,6 +97,24 @@
       "kind": "ask",
       "en": "You're asking me to create a track that isn't for generated content (which would normally get a GEN- prefix). Can you confirm the name and purpose of this track before I create it?",
       "ja": "生成コンテンツ用（通常はGEN-接頭辞）ではないトラックの作成を依頼されています。作成前に、このトラックの名前と用途を確認させてください。"
+    },
+    {
+      "rule_id": "MIXER_CHANGE_ON_OTHER_TRACK",
+      "kind": "ask",
+      "en": "You're asking me to change mixer settings (volume/pan/mute/solo) on a track I didn't create. Can you confirm this is the track and change you want before I make it?",
+      "ja": "私が作成したものではないトラックのミキサー設定（volume/pan/mute/solo）の変更を依頼されています。実行前に、対象のトラックと変更内容を確認させてください。"
+    },
+    {
+      "rule_id": "DEVICE_PARAM_CHANGE_ON_OTHER_TRACK",
+      "kind": "ask",
+      "en": "You're asking me to change a device parameter on a track I didn't create. Can you confirm this is the track, device, and parameter you want changed before I make it?",
+      "ja": "私が作成したものではないトラックのデバイスパラメータの変更を依頼されています。実行前に、対象のトラック・デバイス・パラメータを確認させてください。"
+    },
+    {
+      "rule_id": "TEMPO_CHANGE_UNCONFIRMED",
+      "kind": "ask",
+      "en": "You're asking me to change the project's tempo (BPM), which affects the timing of everything in the set. Can you confirm the new tempo value before I change it?",
+      "ja": "プロジェクトのテンポ（BPM）の変更を依頼されています。セット全体のタイミングに影響するため、実行前に新しいテンポの値を確認させてください。"
     }
   ]
 }
