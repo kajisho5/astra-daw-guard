@@ -38,6 +38,13 @@ yourself, optionally sanity-checked with `tools/deny_check.py` — and
 say so in your report's "Failures" line, since that fallback is a
 heuristic, not the authoritative engine.
 
+**This procedure is a recommendation you follow, not a technical
+guarantee.** If your tool-calling code can import this repo, wrap the
+actual tool function with `enforcement.enforce()` or `@enforcement.guarded`
+(see `enforcement/README.md`) instead of just checking the decision and
+proceeding by hand — that way a DENY means the tool function itself is
+never invoked, not just a rule you're expected to have honored.
+
 ## Common operations → Action JSON
 
 | You're about to... | Action |
