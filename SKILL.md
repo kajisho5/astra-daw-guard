@@ -78,10 +78,14 @@ Full list: `policy/allow.txt`. Summary:
 
 ## 6. 実行プロトコル (Execution protocol: before → during → after)
 
-- **Before**: run through `checklists/before.md`. If the request is "fetch
-  and reproduce an existing song from the internet," switch to composing
-  a new part instead — do not fetch the existing song's MIDI without
-  approval.
+- **Before**: identify which DAW is open, look it up in
+  `adapters/README.md`, and read that DAW's `adapters/<name>.md` —
+  **before** doing anything DAW-specific. It tells you what read path
+  (if any) exists for that DAW and what Computer Use must never touch
+  there. Then run through `checklists/before.md`. If the request is
+  "fetch and reproduce an existing song from the internet," switch to
+  composing a new part instead — do not fetch the existing song's MIDI
+  without approval.
 - **During**: for every individual operation, run through
   `checklists/during.md`. If an action matches `policy/deny.txt`, do not
   perform it — record it under "Denied actions" instead. If
