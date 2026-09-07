@@ -147,8 +147,8 @@ https://github.com/kajisho5/astra-daw-guard
 
 ## 現在の状態
 
-最新版は `v0.9.3`。Policy Engine（`policy_engine/`）・Enforcement
-Boundary（`enforcement/`）ともに実装済み、テスト182件全通過。Reaperと
+最新版は `v0.9.3.1`。Policy Engine（`policy_engine/`）・Enforcement
+Boundary（`enforcement/`）ともに実装済み、テスト184件全通過。Reaperと
 Ableton LiveにはPolicy Engineでゲートされた書き込みツールが追加
 されました（Issue #44、#46）。詳しい開発の経緯は `CHANGELOG.md`、現状評価と
 今後の方針は `ROADMAP.md` を参照してください。

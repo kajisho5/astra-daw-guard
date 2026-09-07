@@ -382,3 +382,38 @@ Ableton Live全体の制御をしたい」との要望。Policy Engineでゲー�
 `policy_engine/rules.py`の既存ルール・`policy/deny.txt`・`mcp-reaper`・
 `mcp-ardour`・`enforcement/boundary.py`は無変更。テストは152件→182件
 （全通過）。実機Ableton Liveでの動作は今回も未検証のまま。
+
+## v0.9.3.1（認可バイパスの修正、新機能なし）
+
+v0.9.3（Ableton Liveのテンポ変更ルール）をCodeRabbitがレビューした際、
+`user_requested_this_turn`の判定が真偽値の厳密比較ではなくtruthinessで
+書かれていた（CWE-863 Authorization Bypass）ことが発覚——この分は
+PR #47自身の中で修正済み（上記v0.9.3参照）。同じパターンを
+`policy_engine/rules.py`全体で検索したところ、v0.9.3より前からmainに
+既にマージ済みだった3ルールにも同一の欠陥が見つかったため、独立した
+修正としてすぐに対応した。
+
+- [x] **`MIDI_FETCH_NO_APPROVAL`（DENY）**: `not a.attr("user_approved_this_turn", False)`
+      という書き方だと、`user_approved_this_turn`に文字列`"false"`
+      （Pythonではtruthy）が渡された場合、`not "false"`は`False`となり
+      このDENYルールが発火せず、後続の`MIDI_FETCH_NOT_ALLOWLISTED`/
+      `MIDI_FETCH_ALLOWED`にフォールスルーしてASK/ALLOWになってしまう
+      欠陥があった。「ユーザーの明示的許可なくMIDIを取得しない」は
+      `SKILL.md`が「このスキルの最重要ルール」と明記している箇所で、
+      最も影響が大きい欠陥だった
+- [x] **`MIDI_FETCH_NOT_ALLOWLISTED`（ASK）・`MIDI_FETCH_ALLOWED`（ALLOW）**:
+      同じ属性を`a.attr("user_approved_this_turn", False)`という
+      truthyチェックで見ていたため、`"false"`や`1`を渡すと
+      本来ASKで確認すべきところが誤ってALLOWまで進む余地があった
+- [x] **`SAVE_AS_APPROVED`（ALLOW）**: `user_requested_this_turn`が
+      同じtruthinessチェックだったため、`"false"`/`1`で本来ASKすべき
+      Save Asが自動ALLOWされる余地があった
+- [x] 全て`a.attr(name) is True`（DENY側は`is not True`）という
+      厳密な同一性比較に修正。`"false"`・`1`のどちらを渡しても
+      意図した決定（DENY/ASK）になることを回帰テストで確認
+
+`policy_engine/rules.py`の該当4ルールのpredicate以外は無変更。ルールの
+`rule_id`・順序・`decision`・`policy/deny.txt`・`policy/allow.txt`との
+対応関係もすべて不変（意図した決定結果を変えるための修正であり、
+正しい入力に対する判定結果は一切変わっていない）。テストは182件→184件
+（全通過）。

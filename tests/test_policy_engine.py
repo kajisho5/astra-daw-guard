@@ -174,7 +174,22 @@ class AskTests(unittest.TestCase):
                 )
                 self.assertEqual(d.decision, ASK)
                 self.assertEqual(d.rule_id, "TEMPO_CHANGE_UNCONFIRMED")
-        self.assertEqual(d.rule_id, "TEMPO_CHANGE_UNCONFIRMED")
+
+    def test_save_as_with_truthy_but_non_boolean_request_still_asks(self):
+        # Same authorization-bypass class as MIDI_FETCH_NO_APPROVAL's
+        # regression test above: SAVE_AS_APPROVED's predicate used to
+        # check truthiness, so "false"/1 would auto-ALLOW a Save As
+        # despite no real user request this turn.
+        for bogus_value in ("false", 1):
+            with self.subTest(user_requested_this_turn=bogus_value):
+                d = evaluate(
+                    {
+                        "operation": "project.save",
+                        "attributes": {"mode": "save_as", "user_requested_this_turn": bogus_value},
+                    }
+                )
+                self.assertEqual(d.decision, ASK)
+                self.assertEqual(d.rule_id, "SAVE_AS_UNCONFIRMED")
 
 
 class DenyTests(unittest.TestCase):
@@ -212,6 +227,30 @@ class DenyTests(unittest.TestCase):
         )
         self.assertEqual(d.decision, DENY)
         self.assertEqual(d.rule_id, "MIDI_FETCH_NO_APPROVAL")
+
+    def test_download_midi_with_truthy_but_non_boolean_approval_is_still_denied(self):
+        # Authorization-bypass regression (same class of bug CodeRabbit
+        # found in PR #47's tempo.change rule, CWE-863): the old
+        # predicate was `not a.attr("user_approved_this_turn", False)`,
+        # which used truthiness. A malformed Action carrying the string
+        # "false" (truthy in Python) or the int 1 would fail to trip
+        # this DENY and fall through to be ASKed or even ALLOWed by the
+        # allowlist rules below it -- on the single rule SKILL.md calls
+        # its most important ("ネットから MIDI を無断で取得することは禁止").
+        for bogus_value in ("false", 1):
+            with self.subTest(user_approved_this_turn=bogus_value):
+                d = evaluate(
+                    {
+                        "operation": "midi.fetch",
+                        "attributes": {
+                            "url": "https://mutopiaproject.org/x.mid",
+                            "host": "mutopiaproject.org",
+                            "user_approved_this_turn": bogus_value,
+                        },
+                    }
+                )
+                self.assertEqual(d.decision, DENY)
+                self.assertEqual(d.rule_id, "MIDI_FETCH_NO_APPROVAL")
 
     def test_download_from_prohibited_dump_site_even_if_approved(self):
         d = evaluate(
