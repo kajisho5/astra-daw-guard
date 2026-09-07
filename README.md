@@ -29,12 +29,17 @@ AIエージェント（GPT-6 Astra、Codex、Claude Code など）が DAW
 |---|---|---|---|
 | Reaper | ✅ `mcp-reaper/` | [reapy](https://github.com/RomeoDespres/reapy)（外部Pythonラッパー） | 未確認（ロジック検証のみ） |
 | Ableton Live | ✅ `mcp-ableton/` | [AbletonOSC](https://github.com/ideoforms/AbletonOSC)（Remote Script） | 未確認（擬似サーバーで検証済み） |
-| Cubase | ガードレールのみ（MCP未実装） | — | — |
-| FL Studio | ガードレールのみ（MCP未実装） | — | — |
+| Cubase | ガードレールのみ（MCPなし） | — | 調査済み: プラットフォーム側の制約で読み取り不可（`adapters/cubase.md`） |
+| FL Studio | ガードレールのみ（MCPなし） | 参考: [`flstudio-mcp`](https://github.com/rosasynthesiz/flstudio-mcp)（コミュニティ製・自己責任） | 未検証・未実装（`adapters/flstudio.md`） |
 
-Cubase・FL Studioは`adapters/`に注意書きはありますが、専用の読み取り
-MCPはまだありません。操作はガードレール（`SKILL.md`の優先順位に従い、
-可能な限り既存のMCP/OSC、無ければComputer Use）に委ねます。
+Cubase・FL Studioにはこのリポジトリ独自の読み取り専用MCPはまだありません。
+2026-09-07時点で調査したところ、Cubaseは既存のMIDI Remote APIブリッジが
+すべて書き込み専用で、トラック名やテンポの読み取りができない（プラット
+フォーム側の制約）ことを確認しました。FL Studioにはコミュニティ製の
+`flstudio-mcp`（beta）が読み取り専用リソースを持っていますが、この
+リポジトリではラップ・検証していません。詳細は各`adapters/*.md`を参照
+してください。操作はガードレール（`SKILL.md`の優先順位に従い、可能な
+限り既存のMCP/OSC、無ければComputer Use）に委ねます。
 
 各アダプタの詳細・セットアップ手順は `mcp-reaper/README.md` /
 `mcp-ableton/README.md` / `adapters/*.md` を参照してください。
