@@ -33,12 +33,7 @@ MIDI 倉庫サイトから有名曲の MIDI ファイルを無断で取得し、
 
 ```bash
 $ echo '{"operation": "midi.fetch", "attributes": {"host": "some-midi-dump-site.example", "user_approved_this_turn": false}}' | python3 -m policy_engine.cli
-{
-  "decision": "DENY",
-  "rule_id": "MIDI_FETCH_NO_APPROVAL",
-  "reason": "MIDI/sample fetch without explicit user approval in this turn.",
-  ...
-}
+{"decision": "DENY", "rule_id": "MIDI_FETCH_NO_APPROVAL", "reason": "MIDI/sample fetch without explicit user approval in this turn."}
 ```
 
 ユーザーがこのターンでURLを名指ししていない時点で `MIDI_FETCH_NO_APPROVAL`
