@@ -2,15 +2,19 @@
 
 ## 既存入口 (Entry points)
 
-This repository now ships its own read-only adapter: `../mcp-ableton/`.
-It talks to [AbletonOSC](https://github.com/ideoforms/AbletonOSC) (a
-third-party but well-documented, actively maintained Remote Script that
-exposes Ableton's Live Object Model over OSC — install it separately per
-its own README) and exposes only `get_tempo`, `get_song_info`, and
-`get_tracks` — no write tools. Its OSC addresses were confirmed against
-AbletonOSC's source, and its request/reply logic has been tested against
-a simulated AbletonOSC server, but **not yet against a real Ableton Live
-instance** — see `../mcp-ableton/README.md` for status.
+This repository now ships its own adapter: `../mcp-ableton/`. It talks
+to [AbletonOSC](https://github.com/ideoforms/AbletonOSC) (a third-party
+but well-documented, actively maintained Remote Script that exposes
+Ableton's Live Object Model over OSC — install it separately per its
+own README) and exposes `get_tempo`, `get_song_info`, and `get_tracks`
+(read-only), plus `create_track` and `write_generated_midi` (write
+tools, gated by the Policy Engine, added in Issue #44 — see
+`../mcp-ableton/README.md` for exactly what each does; there is no
+save/export tool because AbletonOSC has no such OSC address at all).
+Its OSC addresses were confirmed against AbletonOSC's source, and its
+request/reply logic has been tested against a simulated AbletonOSC
+server, but **not yet against a real Ableton Live instance** — see
+`../mcp-ableton/README.md` for status.
 
 Other community-made bridges exist too (e.g. projects styled like
 "ableton-mcp-extension", or MCP servers built on top of AbletonOSC such
@@ -26,10 +30,13 @@ bridge at a real project.
 
 ## このリポジトリが推奨する操作手段 (Recommended method)
 
-- Prefer `../mcp-ableton/` for reading tempo/tracks/song info.
-- Beyond that adapter's read-only scope, only use an existing,
-  already-configured MCP/OSC bridge — never one that requires installing
-  or approving something mid-task.
+- Prefer `../mcp-ableton/` for reading tempo/tracks/song info, and for
+  creating a `GEN-` track or writing generated MIDI into one
+  (`create_track`/`write_generated_midi` — both go through the Policy
+  Engine, so calling them is not a way around this file's rules).
+- Beyond that adapter's scope, only use an existing, already-configured
+  MCP/OSC bridge — never one that requires installing or approving
+  something mid-task.
 - New material goes into a new MIDI track prefixed `GEN-`, never into an
   existing track.
 

@@ -139,14 +139,23 @@ Failures:
 
 ## 8. DAW別の注意 (Per-DAW notes — details in adapters/)
 
-This repo ships its own read-only MCP for three DAWs; for everything
-else, read the matching `adapters/*.md` before touching that DAW — most
-have no safe read path beyond Computer Use, and each file says exactly
-what was checked and when.
+This repo ships its own MCP for three DAWs; for everything else, read
+the matching `adapters/*.md` before touching that DAW — most have no
+safe read path beyond Computer Use, and each file says exactly what
+was checked and when.
 
-- **Reaper** ✅ `mcp-reaper/` (via reapy) — `adapters/reaper.md`
-- **Ableton Live** ✅ `mcp-ableton/` (via AbletonOSC) — `adapters/ableton.md`
-- **Ardour** ✅ `mcp-ardour/` (via Ardour's built-in OSC) — `adapters/ardour.md`
+- **Reaper** ✅ `mcp-reaper/` (via reapy) — read tools plus gated write
+  tools (`create_track`, `write_generated_midi`, `save_project_as`) —
+  `adapters/reaper.md`
+- **Ableton Live** ✅ `mcp-ableton/` (via AbletonOSC) — read tools plus
+  gated write tools (`create_track`, `write_generated_midi`) —
+  `adapters/ableton.md`
+- **Ardour** ✅ `mcp-ardour/` (via Ardour's built-in OSC) — read-only —
+  `adapters/ardour.md`
+
+Every write tool above still goes through the Policy Engine
+(`policy_engine/`) via `enforcement.enforce()` — calling one is not a
+way around any rule in this file or in `policy/deny.txt`.
 - **Bitwig Studio**, **FL Studio**: a community bridge exists (see the
   adapter file) but this repo hasn't wrapped or verified it — use only
   its read-only surface if you rely on it — `adapters/bitwig.md`,

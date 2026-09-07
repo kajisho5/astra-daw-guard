@@ -255,3 +255,57 @@ Issue化して解決する作業を実施。新しいpolicy判定機能の追加
 順序、`policy/deny.txt` / `policy/allow.txt`、
 `mcp-reaper` / `mcp-ableton`、`enforcement/boundary.py`は無変更
 （`mcp-ardour/ardour_mcp/osc_client.py`のみ、上記の意図的な変更）。
+
+## v0.9.2（Reaper / Ableton Liveへの書き込み可能MCPツール — Issue [#44](https://github.com/kajisho5/astra-daw-guard/issues/44)）
+
+`ROADMAP.md`の非目的「書き込み可能なMCP/OSCアダプタを作らない」を、
+リポジトリ所有者の明示的な合意によりReaper・Ableton Live限定で解除。
+`mcp-ardour`は対象外（引き続き読み取り専用）。
+
+- [x] `mcp-reaper`に3つの書き込みツールを追加:
+      `create_track(name, approved=False)`（`GEN-`prefixなら自動ALLOW、
+      それ以外はASK）、`write_generated_midi(track_name, notes, approved=False)`
+      （`GEN-`prefixの既存トラックのみALLOW、それ以外は常にDENY）、
+      `save_project_as(filename, user_requested_this_turn=False, approved=False)`
+      （`user_requested_this_turn=True`なら自動ALLOW、それ以外はASK。
+      上書き保存は表現する手段自体が無い）。判定ロジックは
+      `policy_engine/rules.py`に既存のものをそのまま使用（新ルール追加なし）
+- [x] `save_project_as`はreapy自身の`Project.save(force_save_as=True)`
+      ではなく生の`reascript_api.Main_SaveProjectEx`を使用 —
+      前者はREAPERのインタラクティブなSave Asダイアログを開いてしまい
+      無人実行できないことをreapyのソースコードで確認した上での判断
+- [x] `mcp-ableton`に2つの書き込みツールを追加:
+      `create_track` / `write_generated_midi`（Reaperと同じ判定基準）。
+      保存ツールは無し — AbletonOSCにSave用OSCアドレスが1つも
+      存在しないことをソースコード全体の確認で判断（`mcp-ardour`に
+      テンポ取得ツールが無いのと同じ「無いものは無いと書く」判断）
+- [x] AbletonOSCの書き込み系ハンドラ（`_call_method` /
+      `clip_add_notes`）が**OSC応答を一切返さない**ことをソースコードで
+      確認。そのため`osc_client.py`に応答を待たない片方向送信`send()`を
+      新設し、書き込み結果は`get`系クエリで読み直して確認する設計にした
+- [x] 全ての書き込みツールが`enforcement.enforce()`を経由し、DENY/未承認
+      ASKの場合はreapy/AbletonOSCの呼び出しが一切実行されないことを、
+      fakeのProject/Track/Item/Take（Reaper）・fakeのOSCクライアント
+      （Ableton）を使ったテストで検証（`tests/test_reaper_write_tools.py`、
+      `tests/test_ableton_write_tools.py`）。この検証の過程で、
+      `create_track`の戻り値バグ（`_wait_until`が述語のbool値をそのまま
+      返し、実際の名前を返していなかった）を自分のテストで発見・修正した
+- [x] マージ前の独立レビュー（`code-review`スキル、CONTRIBUTING.md準拠）
+      でさらに2件の実バグを発見・修正: (1) `create_track`が確認に
+      失敗しても間違った名前を「成功」として返していた、(2)
+      `write_generated_midi`は`create_track`と違い書き込み後の確認を
+      一切していなかった。両方とも成功したかのような誤った結果を返す
+      のではなく`AbletonWriteUnconfirmed`例外を投げるよう修正し、
+      再現するテストを追加した。レビューが指摘した3件目（Reaperの
+      `save_project_as`の`project.id`の使い方）はreapy自身の
+      `Project.save()`実装と同じパターンであることを確認済みで、
+      実バグではないと判断した
+- [x] Enforcement Boundary（`enforcement/`）が実際のDAW書き込み経路
+      （fake経由、実機未検証）に接続されたのはこれが初めて。
+      それまでは全てのMCPツールが読み取り専用で常にALLOWだったため、
+      DENY/ASKの分岐が一度も実戦投入されたことが無かった
+
+`policy_engine/rules.py`のルール・順序、`policy/deny.txt` /
+`policy/allow.txt`、`mcp-ardour`、`enforcement/boundary.py`は無変更。
+テストは135件→152件（全通過）。実機DAW・実際のAstra runtimeとの結線は
+今回も対象外 — 書き込みツールの実機での動作は未検証のまま。

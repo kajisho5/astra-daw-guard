@@ -22,9 +22,17 @@ Agent に「Policy Engineを呼んでから実行しろ」と**指示**します
   「Astra runtime統合済み」ではありません。将来Astra側の実行環境が
   このリポジトリをインポートして使う場合の土台として用意しています
 - 既存の `mcp-reaper` / `mcp-ableton` / `mcp-ardour` の読み取り専用
-  ツールは**変更していません**。理由: これらは全て`policy_engine`上
-  常に`READ_ONLY`ルールでALLOWになるため、Enforcementを追加しても
-  DENY/ASKの分岐が一度も発火せず、実演にならないためです
+  ツールは**変更していません**（v0.7時点）。理由: これらは全て
+  `policy_engine`上常に`READ_ONLY`ルールでALLOWになるため、
+  Enforcementを追加してもDENY/ASKの分岐が一度も発火せず、実演に
+  ならないためです
+- **追記（Issue [#44](https://github.com/kajisho5/astra-daw-guard/issues/44)）**:
+  `mcp-reaper` / `mcp-ableton` に書き込みツール（トラック作成・
+  MIDI書き込み・Save As）が追加され、これらは`enforcement.enforce()`
+  経由でこのモジュールを実際に呼び出す初めてのケースになりました。
+  上記の「DENY/ASKが一度も発火しない」という限界はこの2つのDAWの
+  書き込みツールについては解消済みです（`mcp-ardour`は対象外のまま）。
+  詳細は`mcp-reaper/README.md` / `mcp-ableton/README.md`参照
 
 ## Policy EngineとEnforcement Boundaryの役割分担
 
