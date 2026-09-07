@@ -46,9 +46,16 @@ For every operation you are about to perform:
 3. Act on `decision`:
    - `ALLOW` → proceed.
    - `ASK` → stop and ask the user to confirm before proceeding. Do not
-     treat silence or an unrelated reply as confirmation.
+     treat silence or an unrelated reply as confirmation. For consistent,
+     bilingual confirmation wording instead of phrasing it yourself,
+     look up `decision.rule_id` in `tools/decision_message.py`
+     (`message_for_decision(decision)` in-process, or
+     `python3 tools/decision_message.py <rule_id>` — see `tools/README.md`).
    - `DENY` → do not perform the action. Record the operation and the
      returned `reason` under "Denied actions" in `checklists/after.md`.
+     The same `tools/decision_message.py` covers DENY too (it's keyed by
+     `rule_id`, so one lookup handles both outcomes); it falls back to
+     `decision.reason` if a rule_id isn't in its catalog yet.
 4. For a `read.*` operation where you passed `attributes.daw`, also
    check `decision.capability_available` before calling an MCP/OSC tool
    — this is a **separate signal from `decision`, never a substitute for
