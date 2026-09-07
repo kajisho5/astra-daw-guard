@@ -322,3 +322,43 @@ Verification / Provenance strengthening）を実装可能性・DAW固有価値�
 `enforcement/boundary.py`は今回も一切変更していない。テストは
 97件→127件（全通過）。実機DAW・実際のAstra runtimeとの結線は今回も
 対象外。
+
+## v0.9フォローアップ（自己レビュー・品質改善、新機能なし）
+
+v0.9完了後、自分自身の作業を10点満点で採点し、見つかった課題点を
+Issue化して解決する作業を実施。新しいpolicy判定機能の追加ではなく、
+既存コードの品質・信頼性の改善のみ。
+
+- [x] CI/README保守性（Issue [#31](https://github.com/kajisho5/astra-daw-guard/issues/31)、
+      PR [#33](https://github.com/kajisho5/astra-daw-guard/pull/33)） —
+      テストファイルを追加するたびに`.github/workflows/checks.yml`と
+      `policy_engine/README.md`の同じ箇所を手で書き換えていたことが
+      複数回のマージコンフリクトの原因だったため、CIを
+      `unittest discover`による自動検出に変更、READMEのテスト一覧を
+      追記だけで済む箇条書きに変更
+- [x] `policy_engine`のfail-closed型安全性バグ3件（Issue [#34](https://github.com/kajisho5/astra-daw-guard/issues/34)、
+      PR [#35](https://github.com/kajisho5/astra-daw-guard/pull/35)） —
+      自分で書いたテストではなく、独立した`code-review`スキルによる
+      実際のレビューで発見。`evaluate()`が`None`/文字列/リストなど
+      Action以外のトップレベル入力でクラッシュする、`host`/`daw`属性が
+      非文字列だとクラッシュする、`capability`属性がリストだと
+      unhashableでクラッシュする、の3件全てを自分の手でも再現した上で
+      修正。いずれも「例外を投げず必ずDENYで閉じる」という
+      `evaluate()`自身のドキュメント上の約束に反する実バグだった
+- [x] `CONTRIBUTING.md`新設（PR [#36](https://github.com/kajisho5/astra-daw-guard/pull/36)） —
+      このセッション自身が繰り返したブランチ管理ミス・PR粒度による
+      マージコンフリクト・squash-merge時のcommit message書式崩れ、
+      といった実際に起きた問題を根拠に、エンジニアリング作業の進め方
+      をAGENTS.md/ROADMAP.mdとは別ファイルとして記録
+- [x] `tools/benchmark.py`のゼロ反復クラッシュ、`mcp-ardour`の
+      `query_list()`タイムアウト予算未実施（Issue [#37](https://github.com/kajisho5/astra-daw-guard/issues/37),
+      [#38](https://github.com/kajisho5/astra-daw-guard/issues/38)、
+      PR [#39](https://github.com/kajisho5/astra-daw-guard/pull/39)） —
+      同じく独立レビューで発見、両方とも修正前コードで実際に
+      再現してから修正。`policy_engine/` / `enforcement/`は無関係
+      （読み取り専用MCPの信頼性・開発ツールの入力検証の改善のみ）
+
+テストは127件→135件（全通過）。`policy_engine/rules.py`のルール・
+順序、`policy/deny.txt` / `policy/allow.txt`、
+`mcp-reaper` / `mcp-ableton`、`enforcement/boundary.py`は無変更
+（`mcp-ardour/ardour_mcp/osc_client.py`のみ、上記の意図的な変更）。
