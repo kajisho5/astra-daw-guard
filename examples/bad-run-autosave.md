@@ -29,12 +29,7 @@
 
 ```bash
 $ echo '{"operation": "project.save", "attributes": {"mode": "overwrite"}}' | python3 -m policy_engine.cli
-{
-  "decision": "DENY",
-  "rule_id": "PROJECT_OVERWRITE",
-  "reason": "Overwriting the currently open project is never allowed, regardless of user request.",
-  ...
-}
+{"decision": "DENY", "rule_id": "PROJECT_OVERWRITE", "reason": "Overwriting the currently open project is never allowed, regardless of user request."}
 ```
 
 `reason`にある通り、**ユーザーが保存を依頼していたとしても**

@@ -150,15 +150,29 @@ print(decision.rule_id)    # "PROJECT_OVERWRITE"
 
 ### CLIから
 
+Pythonから直接importできない呼び出し元(シェルスクリプト等)向けの
+フォールバックです。`during.md`の通り、importできる場合は上の
+Pythonの方を優先してください。
+
 ```bash
 echo '{"operation": "read.tempo"}' | python3 -m policy_engine.cli
-# ALLOW → 終了コード 0
+# {"decision": "ALLOW", "rule_id": "READ_ONLY", "reason": "..."}
+# 終了コード 0
 
 python3 -m policy_engine.cli '{"operation": "project.save", "attributes": {"mode": "overwrite"}}'
-# DENY → 終了コード 2
+# {"decision": "DENY", "rule_id": "PROJECT_OVERWRITE", "reason": "..."}
+# 終了コード 2
 ```
 
-終了コード: `ALLOW`=0, `ASK`=1, `DENY`=2。
+デフォルト出力は`decision`/`rule_id`/`reason`(該当する場合のみ
+`capability_available`)に絞った最小限のJSONです(1行、コンパクト)。
+Agentが操作ごとに毎回読むテキストなので、判断に不要な入力の
+エコーバック(`operation`/`target`/`attributes`)は含めません。
+
+- `--full`: 完全な`Decision`(`operation`/`target`/`attributes`含む)を出力。監査・デバッグ用
+- `--pretty`: インデント付きで出力(人間が読む場合)
+
+終了コード: `ALLOW`=0, `ASK`=1, `DENY`=2(`--full`/`--pretty`の有無に関わらず不変)。
 
 ## やらないこと(Non-goals)
 
@@ -171,6 +185,8 @@ python3 -m policy_engine.cli '{"operation": "project.save", "attributes": {"mode
 ## 動作確認
 
 `tests/test_policy_engine.py`(40テスト)で以下を検証済みです。
+CLI自体(デフォルト出力の最小化・`--full`/`--pretty`・終了コード)は
+`tests/test_cli.py`(8テスト)で別途検証しています。
 
 - `policy/deny.txt`の10ルールそれぞれに対応するDENYケース
 - `policy/allow.txt`の許可ケース(ALLOW)

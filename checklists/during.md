@@ -35,6 +35,14 @@ For every operation you are about to perform:
    ```bash
    echo '<action json>' | python3 -m policy_engine.cli
    ```
+
+   The CLI's default output is deliberately minimal — just
+   `decision`/`rule_id`/`reason` (plus `capability_available` when it
+   applies, see step 4) — since this is text an agent re-reads on every
+   operation. It carries everything you need to act; it does not echo
+   your input back. Pass `--full` only if you need the complete Decision
+   (adds `operation`/`target`/`attributes`) for audit or debugging, and
+   `--pretty` for indented output.
 3. Act on `decision`:
    - `ALLOW` → proceed.
    - `ASK` → stop and ask the user to confirm before proceeding. Do not

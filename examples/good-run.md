@@ -13,12 +13,7 @@
 
   ```bash
   $ echo '{"operation": "track.create", "attributes": {"name": "GEN-drums"}}' | python3 -m policy_engine.cli
-  {
-    "decision": "ALLOW",
-    "rule_id": "CREATE_GEN_TRACK",
-    "reason": "New track created for generated content, correctly prefixed.",
-    ...
-  }
+  {"decision": "ALLOW", "rule_id": "CREATE_GEN_TRACK", "reason": "New track created for generated content, correctly prefixed."}
   ```
 
 - ALLOWを確認してから `GEN-drums` トラックを作成し、8小節分のドラムMIDIを
@@ -26,7 +21,7 @@
 
   ```bash
   $ echo '{"operation": "midi.write", "attributes": {"source": "generated", "track": "GEN-drums"}}' | python3 -m policy_engine.cli
-  {"decision": "ALLOW", "rule_id": "GENERATED_MIDI_INTO_GEN_TRACK", ...}
+  {"decision": "ALLOW", "rule_id": "GENERATED_MIDI_INTO_GEN_TRACK", "reason": "Generated MIDI written into a new GEN--prefixed track."}
   ```
 
 - 既存トラックには触れていない
