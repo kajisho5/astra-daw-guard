@@ -18,10 +18,10 @@ never ALLOW. "Could not determine" is not a reason to proceed.
 from __future__ import annotations
 
 import dataclasses
-from typing import Union
+from typing import Iterable, Sequence, Union
 
 from .capabilities import mcp_supports
-from .rules import DENY, RULES, Decision
+from .rules import ALLOW, ASK, DENY, RULES, Decision
 from .schema import Action, ActionSchemaError
 
 KNOWN_OPERATIONS = {
@@ -114,3 +114,41 @@ def evaluate(action: Union[dict, Action]) -> Decision:
         target=action.target,
         attributes=action.attributes,
     )
+
+
+def evaluate_plan(actions: Sequence[Union[dict, Action]]) -> list[Decision]:
+    """Evaluate a whole planned sequence of Actions up front (Issue #26).
+
+    Returns one `Decision` per input Action, in the same order, by
+    calling `evaluate()` on each independently — this is a stateless
+    batching convenience, not a planner. It does NOT reason about
+    dependencies between Actions (e.g. it will not notice that step 2
+    only makes sense if step 1 is ALLOWed, or that step 3's DENY makes
+    step 4 moot): every Action is evaluated exactly as if `evaluate()`
+    had been called on it alone, with no memory of the others. Use this
+    to get an up-front, single-pass verdict for a proposed multi-step
+    task before starting it — see `checklists/before.md`.
+    """
+    return [evaluate(action) for action in actions]
+
+
+# Worst-case-first, matching policy_engine.cli's exit code ordering
+# (ALLOW=0, ASK=1, DENY=2): a DENY anywhere in a plan outranks an ASK,
+# which outranks an all-ALLOW plan.
+_DECISION_SEVERITY = {DENY: 2, ASK: 1, ALLOW: 0}
+
+
+def worst_decision(decisions: Iterable[Decision]) -> str:
+    """Return the most severe decision among `decisions` (DENY > ASK >
+    ALLOW), or ALLOW for an empty sequence (there is nothing to block).
+    """
+    worst = ALLOW
+    for decision in decisions:
+        if _DECISION_SEVERITY[decision.decision] > _DECISION_SEVERITY[worst]:
+            worst = decision.decision
+    return worst
+
+
+def plan_is_clear(decisions: Iterable[Decision]) -> bool:
+    """True only if every Decision in `decisions` is ALLOW."""
+    return worst_decision(decisions) == ALLOW

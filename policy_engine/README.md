@@ -136,6 +136,37 @@ Computer UseはDENY」を機械的に判定します。したがってArdourで
 `tests/test_policy_engine.py`の`CapabilityMatrixTests`が、この表が
 実際の`mcp-*/*/server.py`のツール定義と一致しているかをASTで検証します。
 
+## 計画の事前一括チェック(`evaluate_plan` — Issue #26)
+
+1操作ずつではなく、複数Actionからなる計画をまとめて事前チェックできます。
+
+```python
+from policy_engine import evaluate_plan, plan_is_clear, worst_decision
+
+plan = [
+    {"operation": "read.tempo"},
+    {"operation": "track.create", "attributes": {"name": "GEN-bass"}},
+    {"operation": "midi.write", "attributes": {"source": "generated", "track": "GEN-bass"}},
+]
+decisions = evaluate_plan(plan)
+if not plan_is_clear(decisions):
+    print(worst_decision(decisions))  # "ASK" or "DENY"
+```
+
+CLIでも同様に`--plan`でJSON配列を渡せます:
+
+```bash
+echo '[{"operation": "read.tempo"}, {"operation": "project.save", "attributes": {"mode": "overwrite"}}]' \
+    | python3 -m policy_engine.cli --plan
+# 1行ずつDecisionを出力。終了コードは計画全体の最悪値
+# (DENYが1つでもあれば2、無ければASKの有無で1、全ALLOWなら0)
+```
+
+**これは`evaluate()`を順番に呼ぶだけの薄いラッパーです。** Action同士の
+依存関係(「step 2はstep 1がALLOWされて初めて意味を持つ」等)は一切
+推論しません。各Actionは`evaluate()`を単体で呼んだときと完全に同じ
+結果になります(状態を共有しない、ステートレスな一括処理)。
+
 ## DAW State Snapshot(監査文脈用、判定には影響しない — Issue #25)
 
 `policy_engine/daw_state.py`は、Actionが提案された時点でDAWが
@@ -220,12 +251,14 @@ Agentが操作ごとに毎回読むテキストなので、判断に不要な入
 ## 動作確認
 
 `tests/test_policy_engine.py`(40テスト)で以下を検証済みです。
-CLI自体(デフォルト出力の最小化・`--full`/`--pretty`・終了コード)は
-`tests/test_cli.py`(8テスト)で別途検証しています。Issue #16の
+CLI自体(デフォルト出力の最小化・`--full`/`--pretty`/`--plan`・終了
+コード)は`tests/test_cli.py`(15テスト)で別途検証しています。Issue #16の
 Token/UX最適化(Step 1-3)がALLOW/ASK/DENYの判定結果やルールの並び順を
 変えていないことは`tests/test_security_regression.py`(12テスト)で
-横断的に固定しています。`daw_state`(Issue #25)が判定結果を変えない
-ことは`tests/test_daw_state.py`(9テスト)で固定しています。
+横断的に固定しています。`evaluate_plan`/`plan_is_clear`/
+`worst_decision`(Issue #26)は`tests/test_evaluate_plan.py`
+(14テスト)で検証しています。`daw_state`(Issue #25)が判定結果を
+変えないことは`tests/test_daw_state.py`(9テスト)で固定しています。
 
 - `policy/deny.txt`の10ルールそれぞれに対応するDENYケース
 - `policy/allow.txt`の許可ケース(ALLOW)
