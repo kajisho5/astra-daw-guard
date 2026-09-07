@@ -21,3 +21,19 @@ If the request is "reproduce an existing song by fetching it from the
 internet," switch to composing a new part in a similar style instead.
 Do not fetch an existing song's MIDI without explicit, in-turn approval
 and a host on `policy/license-allowlist.txt`.
+
+If you can already express your intended actions for this task as a
+list of Action JSON (see `checklists/during.md`), you can optionally
+check the whole plan up front instead of finding out step-by-step:
+
+```python
+from policy_engine import evaluate_plan, plan_is_clear, worst_decision
+decisions = evaluate_plan([action1, action2, ...])
+```
+
+or `python3 -m policy_engine.cli --plan` with a JSON array on stdin.
+This is a stateless batch of independent `evaluate()` calls — it does
+not reason about dependencies between steps (see
+`policy_engine/README.md`). You still run `checklists/during.md`'s
+per-operation check before each actual action; this is a convenience
+for surfacing an obvious DENY/ASK earlier, not a replacement for it.
