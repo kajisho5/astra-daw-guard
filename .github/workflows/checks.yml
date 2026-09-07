@@ -33,8 +33,8 @@ jobs:
       - name: Byte-compile enforcement/*.py
         run: python3 -m py_compile enforcement/*.py
 
-      - name: Run policy_engine, enforcement, cli, security regression, audit separation, decision message, benchmark, evaluate_plan, and daw_state tests
-        run: python3 -m unittest tests.test_policy_engine tests.test_enforcement tests.test_cli tests.test_security_regression tests.test_audit_separation tests.test_decision_messages tests.test_benchmark tests.test_evaluate_plan tests.test_daw_state -v
+      - name: Run all tests/test_*.py modules (auto-discovered, Issue #31)
+        run: python3 -m unittest discover -s tests -p "test_*.py" -v
 
       - name: Validate JSON files parse
         run: |

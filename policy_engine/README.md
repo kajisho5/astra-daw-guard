@@ -250,15 +250,33 @@ Agentが操作ごとに毎回読むテキストなので、判断に不要な入
 
 ## 動作確認
 
-`tests/test_policy_engine.py`(40テスト)で以下を検証済みです。
-CLI自体(デフォルト出力の最小化・`--full`/`--pretty`/`--plan`・終了
-コード)は`tests/test_cli.py`(15テスト)で別途検証しています。Issue #16の
-Token/UX最適化(Step 1-3)がALLOW/ASK/DENYの判定結果やルールの並び順を
-変えていないことは`tests/test_security_regression.py`(12テスト)で
-横断的に固定しています。`evaluate_plan`/`plan_is_clear`/
-`worst_decision`(Issue #26)は`tests/test_evaluate_plan.py`
-(14テスト)で検証しています。`daw_state`(Issue #25)が判定結果を
-変えないことは`tests/test_daw_state.py`(9テスト)で固定しています。
+テストは`python3 -m unittest discover -s tests -p "test_*.py" -v`
+(または`.github/workflows/checks.yml`のCI)で全て自動的に見つかって
+実行されます。新しい`tests/test_*.py`を追加してもこのファイルや
+CI設定を編集する必要はありません(Issue #31)。件数は`tests/`配下の
+ファイル数・内容によって変わるため、このREADMEでは正確な数を
+追いかけません — 正確な件数は上記コマンドの実行結果を見てください。
+
+各テストファイルが何を検証しているか:
+
+- `tests/test_policy_engine.py` — `policy_engine`本体(下記の項目)
+- `tests/test_cli.py` — CLI自体(デフォルト出力の最小化・`--full`/
+  `--pretty`/`--plan`・終了コード)
+- `tests/test_security_regression.py` — Issue #16のToken/UX最適化
+  (Step 1-3)がALLOW/ASK/DENYの判定結果やルールの並び順を変えて
+  いないことを横断的に固定
+- `tests/test_audit_separation.py` — Agent向け表示の最小化が監査
+  情報を失っていないこと
+- `tests/test_decision_messages.py` — `tools/decision_message.py`の
+  メッセージカタログが`rules.py`と同期していること
+- `tests/test_benchmark.py` — `tools/benchmark.py`の構造的な動作確認
+- `tests/test_evaluate_plan.py` — `evaluate_plan`/`plan_is_clear`/
+  `worst_decision`(Issue #26)がバッチ化しても単体`evaluate()`と
+  同じ結果を返すこと
+- `tests/test_daw_state.py` — `daw_state`(Issue #25)を付けても
+  ALLOW/ASK/DENYの判定結果が変わらないこと
+
+`tests/test_policy_engine.py`で特に以下を検証済みです:
 
 - `policy/deny.txt`の10ルールそれぞれに対応するDENYケース
 - `policy/allow.txt`の許可ケース(ALLOW)
