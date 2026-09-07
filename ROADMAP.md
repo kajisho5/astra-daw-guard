@@ -1,319 +1,143 @@
-# astra-daw-guard — Claude Code 実装ロードマップ
+# astra-daw-guard — ROADMAP
 
-このファイルを最初から最後まで実行すること。
-推測で機能を増やさない。各フェーズの完了条件を満たしてから次へ進む。
+このファイルは「最初から実行する構築手順」ではありません。**現在の
+状態・完了済みのフェーズ・次にやることを記録する状況ドキュメント**
+です（v0.1構築時は逆に「上から実行する手順書」でしたが、v0.1完成後は
+この役割に変わっています）。
 
-## 目的
+## 目的（変更なし）
 
-GPT-6 Astra などのエージェントが DAW（Ableton / Reaper / Cubase / FL Studio）を操作するとき、次を防ぐ。
+GPT-6 Astra などのAIエージェントが DAW（Reaper / Ableton Live / Ardour /
+その他）を操作するとき、次を防ぐ。
 
 - ネットから MIDI / サンプルを無断取得する
-- 生成物と既存素材を混ぜて黙る
+- 生成物と既存素材を混ぜて出典を黙る
 - プロジェクトを勝手に上書き保存する
 - Computer Use でウィンドウやレイアウトを壊す
 
-操作そのものは既存の MCP / OSC に任せる。このリポジトリは **禁止事項・許可事項・検証報告** をエージェントに強制する層。
+操作そのものは既存の MCP / OSC / Computer Use に任せる。このリポジトリは
+**禁止事項・許可事項・機械的判定・検証報告** をエージェントに強制する層。
 
-## 非目的（やらない）
+## 非目的（変更なし・今後も維持）
 
 - 新しい DAW を作らない
-- Ableton LiveAPI ブリッジを再発明しない
+- Ableton LiveAPI ブリッジや他DAWのAPIブリッジを再発明しない
 - 自動作曲モデルを訓練しない
 - Computer Use のスクリーンクリック自動化を実装しない
 - 有料 MIDI 倉庫や著作権 MIDI のミラーを作らない
-
-## 完了の定義（リポジトリ全体）
-
-次が揃ったら v0.1。
-
-- [ ] `SKILL.md` が単体でエージェントに読ませて使える
-- [ ] `policy/deny.txt` と `policy/allow.txt` がある
-- [ ] 作業後レポートのテンプレートがある
-- [ ] 悪い例（無断 MIDI 取得）と良い例がある
-- [ ] README が日本語で、何を防ぐリポジトリか 10 行以内で分かる
-- [ ] コードはまだ無くてよい。ドキュメントだけで v0.1 は完成
-
----
-
-## フェーズ 0 — 骨格（30分）
-
-作るファイル:
-
-```
-astra-daw-guard/
-  README.md
-  AGENTS.md
-  SKILL.md
-  LICENSE          # MIT
-  ROADMAP.md       # このファイルを残す
-  policy/
-    allow.txt
-    deny.txt
-    license-allowlist.txt
-  checklists/
-    before.md
-    during.md
-    after.md
-  adapters/
-    README.md
-    reaper.md
-    ableton.md
-    cubase.md
-    flstudio.md
-  examples/
-    good-run.md
-    bad-run-midi-fetch.md
-    bad-run-autosave.md
-```
-
-完了条件:
-
-- 空ファイルを残さない。各ファイルに「何のためのファイルか」が書いてある
-- `git init` はユーザーが既にやっている場合は触らない
-
----
-
-## フェーズ 1 — ポリシーを短く固める（最重要）
-
-### `policy/deny.txt`
-
-1行1ルール。命令形。例外を書かない。最低これらを入れる。
-
-```
-Do not download .mid .midi .kar files without explicit user approval in this turn.
-Do not scrape BitMidi, MIDIWorld, Free MIDI, or unnamed MIDI dump sites.
-Do not treat "public domain" as proven unless the URL is on license-allowlist.txt.
-Do not overwrite the open DAW project. Save As only, and only if the user asked.
-Do not mix generated MIDI and imported material on one track without labeling source.
-Do not minimize, move, or retile DAW windows.
-Do not change display zoom, color theme, or key bindings.
-Do not install plugins, pack content, or accept license dialogs.
-Do not send the user's project file, stems, or unpublished songs to a remote URL except the model API already in use.
-Do not run Computer Use if an MCP/OSC adapter is available for the same action.
-```
-
-### `policy/allow.txt`
-
-```
-Read the current set: tempo, time signature, track list, clip names, devices.
-Generate new MIDI from scratch when the user asked to compose.
-Write MIDI only into a new track named with prefix GEN-.
-Save As to a new filename that includes a timestamp if the user asked to save.
-Use MCP/OSC/ReaScript if already configured.
-Fetch a file only when: user named the URL in this turn AND the host is on license-allowlist.txt.
-Report sources after every run using checklists/after.md.
-```
-
-### `policy/license-allowlist.txt`
-
-許可してよいホストだけ。コメント付き。
-
-```
-# Classical PD scores as MIDI, project-by-project check still required
-mutopiaproject.org
-# Explicitly CC0 sample host — still record the sample page URL
-freesound.org
-# User's own machine
-file://
-```
-
-BitMidi や midiworld.com は **入れない**。
-
-完了条件:
-
-- deny が 8 行以上
-- allowlist が 5 ホスト未満（狭い方が正しい）
-
----
-
-## フェーズ 2 — SKILL.md を書く
-
-エージェントが読む本体。200行以内。見出しはこの順で固定。
-
-1. いつ使うか
-2. 使わないとき
-3. 優先順位（MCP > 読み取り > Computer Use）
-4. 禁止
-5. 許可
-6. 実行プロトコル（before → during → after）
-7. 報告フォーマット（コピー用）
-8. DAW別の注意（各5行以内、詳細は adapters/）
-
-報告フォーマットは必ずコードブロックで置く。
-
-```text
-DAW:
-Adapter used: mcp | osc | computer-use | none
-Tracks changed:
-MIDI added:
-  - track: 
-    source: generated | user-provided | url
-    url:
-    license:
-Saved: no | saved-as <filename>
-Computer Use used: yes/no
-Denied actions (what I refused):
-Failures:
-```
-
-完了条件:
-
-- 「ネットから MIDI を取る」が禁止として本文に明記されている
-- 報告フォーマットが本文からコピーできる
-- 英語でも日本語でもエージェントが従えるよう、ルール本文は英語、解説は日本語でも可。どちらかに統一するなら英語ルール + 日本語 README
-
-推奨: **ルール文は英語**（Claude Code / Codex が安定して読む）。README と examples は日本語。
-
----
-
-## フェーズ 3 — チェックリスト
-
-### `checklists/before.md`
-
-作業前にエージェントが自分に問う質問。
-
-- 開いているプロジェクト名は何か
-- ユーザーは保存を依頼したか
-- 依頼は「作曲」か「既存曲の再現」か「編曲」か
-- MCP/OSC は使えるか
-- ネット取得の許可は今ターンの文章にあるか
-
-1つでも「既存曲をネットから持って再現」なら、生成に切り替えろと書く。既存MIDIの無断取得はしない。
-
-### `checklists/during.md`
-
-1操作ごと。
-
-- 今から変えるオブジェクトは何か
-- それは上書きか追加か
-- deny.txt に当たるか
-
-当たったら操作せず、Denied actions に書く。
-
-### `checklists/after.md`
-
-フェーズ2の報告フォーマットをここにも置く。加えて人間向けの短い日本語要約欄を付ける。
-
-完了条件:
-
-- before の質問が Yes/No で答えられる
-- after が SKILL.md と同じフォーマット
-
----
-
-## フェーズ 4 — アダプタメモ（実装しない、手順だけ）
-
-各 `adapters/*.md` に書くこと。ページあたり 40 行以内。
-
-必須セクション:
-
-- 公式または既存のエージェント向け入口（URL）
-- このリポジトリが推奨する操作手段
-- Computer Use でやってはいけない UI
-- 保存ダイアログの扱い
-
-既存入口の例（リンク切れなら「未確認」と書け。嘘のURLを作るな）:
-
-- Ableton: codex-live-bridge / ableton-live-mcp / ableton-mcp-extension を列挙し、このガードを先に読めと書く
-- Reaper: ReaScript / 自作 MCP が将来入る想定。今は「読み取りと新規トラック追加以外禁止」
-- Cubase: API が弱い。Computer Use は保存・ウィンドウ操作禁止を強調
-- FL Studio: 同様。Piano roll の直接クリックは失敗しやすいと書く
-
-`adapters/README.md` には「ここは操作実装ではなく注意書き」と書く。
-
----
-
-## フェーズ 5 — 実施例
-
-### `examples/good-run.md`
-
-架空の良いログ。ユーザーが「8小節のハウスのドラムを新規トラックに作って。保存しないで」と言った場合。
-
-- GEN-drums トラックを追加
-- MIDI は生成
-- 保存していない
-- 報告フォーマットが埋まっている
-
-### `examples/bad-run-midi-fetch.md`
-
-悪い例。エージェントが Mutopia 以外の MIDI 倉庫から有名曲 MIDI を落としてプロジェクトに置いた。
-
-- どのルールに違反したか
-- 正しい応答（拒否文）を併記
-
-拒否文の例:
-
-```
-I can't fetch that MIDI from the open web. I can compose a new part in the same style, or use a file you provide.
-```
-
-### `examples/bad-run-autosave.md`
-
-勝手に上書き保存した悪い例と、Save As に変える正しい例。
-
-完了条件:
-
-- 悪い例は「何が悪いか」が最初の5行で分かる
-
----
-
-## フェーズ 6 — README.md（日本語）
-
-構成固定。
-
-1. このリポジトリは何か（5行）
-2. 防ぐこと（箇条書き4つ）
-3. やらないこと（箇条書き3つ）
-4. Claude Code / Codex での使い方
-
-使い方はこれ以上増やさない。
-
-```text
-このリポジトリを開いた状態で:
-
-1. AGENTS.md と SKILL.md を読め
-2. policy/deny.txt に当たる操作をするな
-3. 作業後は checklists/after.md のフォーマットで報告しろ
-```
-
-5. v0.1 の範囲（ドキュメントのみ）
-6. 後続（フェーズ7以降は未実装）
-
-完了条件:
-
-- 英語リポジトリ名でも README は日本語で読んで分かる
-- インストール手順や npm を書かない（まだコードが無い）
-
----
-
-## フェーズ 7 — まだやるな（v0.2 以降）
-
-ロードマップに書いておくだけ。v0.1 では実装しない。
-
-1. Reaper 読み取り専用 MCP（トラック一覧、テンポ）
-2. ダウンロードしたファイルのライセンス記録用 `sources.json`
-3. Computer Use の前に deny を機械チェックする小さな CLI
-4. 日本語 / 英語の拒否メッセージ辞書
-
-やりたくなっても v0.1 をマージしてから。
-
----
-
-## Claude Code への実行指示
-
-今このリポジトリ（または空ディレクトリ）で次をやれ。
-
-1. フェーズ0のファイルをすべて作る
-2. フェーズ1〜6をこの順で埋める
-3. フェーズ7は README の「後続」に箇条書きするだけ
-4. 新しいディレクトリ名を勝手に変えない（`astra-daw-guard`）
-5. 依存パッケージを追加しない
-6. テストコードを書かない
-7. 完了したら変更ファイル一覧と、SKILL.md の行数を報告する
-
-品質基準:
-
-- ルールは短く、例外を増やさない
-- 「便利だから」で allowlist を広げない
-- 存在しない GitHub リポジトリを公式のつもりで書かない。不確かなら「コミュニティ製・自己責任」と書く
-- 著作権でグレーな MIDI サイトを助けない
+- **汎用Agent Guard製品への改名・汎用化はしない。DAW専用のまま進める**
+- 書き込み可能なMCP/OSCアダプタを作らない（現状、`mcp-reaper` /
+  `mcp-ableton` / `mcp-ardour` はすべて読み取り専用。この境界は意図的で、
+  変更する場合は別途明確な合意が必要）
+
+## Current state（2026-09-07時点）
+
+- `main` HEAD: `b4dc98f`
+- テスト: 97件、全通過（`python3 -m unittest tests.test_policy_engine
+  tests.test_enforcement tests.test_cli tests.test_security_regression
+  tests.test_audit_separation tests.test_decision_messages
+  tests.test_benchmark -v`）
+- GitHub Issues: #10, #12, #14, #16 は全てCLOSED（重複なし確認済み）。
+  #25, #26 が新規OPEN（本ロードマップ更新時に作成、詳細は後述）
+- ガードレール本体（`SKILL.md` / `policy/`）は全DAW共通
+- 読み取り専用MCP: Reaper / Ableton Live / Ardour の3つのみ、いずれも
+  実機未検証（擬似サーバーでのロジック検証のみ）
+- **書き込み可能なMCP/OSCツールは1つも存在しない**（`mcp-reaper` /
+  `mcp-ableton` / `mcp-ardour` の`@mcp.tool()`は全8関数とも読み取り専用）
+- Policy Engine（`policy_engine/`）と Enforcement Boundary
+  （`enforcement/`）が実装済み。ただし実際のAstra Agent runtimeとの
+  結線は無い（このリポジトリには実行中のAgentループが存在しないため）
+
+## Completed（バージョン履歴の要約。詳細は README.md 参照）
+
+| バージョン | 内容 | 参照 |
+|---|---|---|
+| v0.1 | ドキュメントのみの骨格（SKILL.md / policy/ / checklists/ / adapters/ / examples/） | PR #1 |
+| v0.2 | Reaper読み取り専用MCP、sources.json記録、deny_check.py、拒否メッセージ辞書 | PR #2, #3, #4 |
+| v0.3 | Ableton Live読み取り専用MCP | PR #5 |
+| v0.4 | Ardour読み取り専用MCP、全主要DAWの読み取り可否調査 | PR #6, #7 |
+| — | CI（GitHub Actions）導入、MCPセットアップの手動負担削減 | PR #8, #9 |
+| v0.5 | Policy Engine（`policy_engine/`、機械可読ALLOW/ASK/DENY、fail-closed） | Issue #10, PR #11 |
+| v0.6 | Policy Engineを`checklists/during.md`の具体的な呼び出し手順に統合 | Issue #12, PR #13 |
+| v0.7 | Enforcement Boundary（`enforcement/`、Tool実行そのものをゲート） | Issue #14, PR #15 |
+| v0.8 | Runtime Efficiency & UX Optimization（in-process優先、Capability分離、output最小化、セキュリティ回帰テスト、Audit separation、Approval/Failure UX、ベンチマーク、ドキュメント整理） | Issue #16, PR #17-#24 |
+
+## Current phase — 次フェーズ再設計・監査（このコミット）
+
+ユーザー指示により、以下を実施：
+
+1. リポジトリ全体の実監査（README / ROADMAP / AGENTS / SKILL /
+   policy/ / policy_engine/ / enforcement/ / checklists/ / examples/ /
+   adapters/ / mcp-reaper/ / mcp-ableton/ / mcp-ardour/ / tests/ /
+   .github/workflows/、Git履歴、GitHub Issues）
+2. ROADMAP.mdとREADME.mdの実装との乖離を洗い出し
+3. 次フェーズ候補（A〜F）を実装可能性・DAW固有価値・既存設計との整合性で検証
+4. 採用したものだけをIssue化、このROADMAP.mdを更新
+
+### 検証した候補と判断
+
+| 候補 | 判断 | 理由 |
+|---|---|---|
+| A. DAW State Awareness | **採用(縮小)** → Issue #25 | 既存の読み取り専用MCP（tempo/tracks/project_info/song_info/transport）から導出できる範囲でのみ、AuditログにDAW状態を残せる構造を追加。**新しいpolicy判定ルールは追加しない**（deny.txt/allow.txtに根拠が無いルールを作らない） |
+| B. Risk Classification | **不採用** | ALLOW/ASK/DENYの3段階が既に判断の粒度として機能しており、ラベルだけ追加しても判定に影響しない「装飾」になる。判定を変える具体的な仕組みが無い限り採用しない |
+| C. Plan / Dry Run | **採用** → Issue #26 | 既存の`evaluate()`を複数Actionにバッチ適用するだけの薄いラッパーで実装可能。新しいルール・状態管理は不要。既存アーキテクチャ（ステートレスな純粋関数）と完全に整合する |
+| D. Enforcement Boundary hardening | **不採用（現時点）** | `enforcement/boundary.py`を監査した結果、ゲートすべき書き込み可能なTool呼び出し箇所がリポジトリ内に1つも存在しない（3つのMCPは全て読み取り専用・常にALLOW）。async関数も存在しないためasync対応の必要も無い。書き込み可能なアダプタが将来追加されない限り、強化すべき対象が無い |
+| E. Post-execution Verification | **不採用（現時点）** | 技術的には既存の読み取りツールで実行前後のtrack_count等を比較できるが、このリポジトリのEnforcementがゲートする書き込み操作が存在しないため、何と何を比較するかが定義できない。DのEnforcement対象が無い限り前提が成立しない |
+| F. Provenance strengthening | **不採用（現時点）** | `sources.json` / `tools/record_source.py`が既に`policy/allow.txt`の「取得後は出典を報告する」要求を満たしている。DAW内部での素材追跡の強化は書き込み可能なアダプタを要するため、今は対象が無い |
+
+B/D/E/Fは「今回不採用」であり「永久に不要」ではない。D/E/Fは特に、
+書き込み可能なMCP/OSCアダプタが将来追加された場合に再検討する（ただし
+非目的の通り、そのようなアダプタを積極的に作る計画は無い）。
+
+## Next phase — Issue #25, #26
+
+- **Issue #25**: DAW状態スナップショットのスキーマ追加（Audit文脈用、
+  判定ロジックは変更しない）
+- **Issue #26**: `evaluate_plan()` — 複数Actionの事前一括チェック
+  （dry-run、既存`evaluate()`の薄いラッパー、クロスAction推論はしない）
+
+両Issueとも、実装前に必ず本文のNon-goalsを守ること。特にIssue #25は
+「新しいpolicy判定ルールを追加しない」が最重要の制約。
+
+## Definition of Done（次フェーズ）
+
+- [ ] Issue #25の受け入れ基準を全て満たす
+- [ ] Issue #26の受け入れ基準を全て満たす
+- [ ] 既存テスト（97件）が無傷で通過し続ける
+- [ ] `policy/deny.txt` / `policy/allow.txt` / 既存ルールのALLOW/ASK/DENY
+      判定結果が一切変わらない
+- [ ] `mcp-reaper` / `mcp-ableton` / `mcp-ardour` / `enforcement/boundary.py`
+      への変更が無い（今回のスコープでは書き込み対象が無いため）
+- [ ] README.md / ROADMAP.md が実装と同期している
+
+## 非目的（このフェーズ限定）
+
+- Risk Classificationのラベル追加（B、不採用）
+- Enforcement Boundaryの強化（D、対象が無いため不採用）
+- Post-execution Verification（E、Dに依存するため不採用）
+- Provenanceの深い強化（F、書き込みアダプタが無いため不採用）
+- 汎用Agent Guardへの改名・汎用化（恒久的な非目的）
+- 新しいDAW/MCP/OSCアダプタの追加（恒久的な非目的）
+
+## History — 旧ROADMAP.md（v0.1構築手順書）の対応表
+
+一部のREADME（`mcp-reaper/README.md`・`tools/README.md`・
+`sources/README.md`等）が「ROADMAP.md フェーズ7」「v0.2 項目1〜4」
+という旧ROADMAP.mdの見出しを史実として引用している。旧ROADMAP.mdは
+v0.1完成までの構築手順書（フェーズ0〜7）だったため、それらの引用を
+解決できるよう対応関係だけ簡潔に残す（全文は`git log`で
+`cf35d84`〜`919162c`時点のROADMAP.mdを参照すれば復元できる）。
+
+| 旧見出し | 内容 | 現在の対応 |
+|---|---|---|
+| フェーズ0 | 骨格ファイル一式 | v0.1（Completed表） |
+| フェーズ1 | policy/deny.txt・allow.txt | v0.1（Completed表） |
+| フェーズ2 | SKILL.md | v0.1（Completed表） |
+| フェーズ3 | checklists/ | v0.1（Completed表） |
+| フェーズ4 | adapters/ | v0.1（Completed表） |
+| フェーズ5 | examples/ | v0.1（Completed表） |
+| フェーズ6 | README.md | v0.1（Completed表） |
+| フェーズ7・v0.2項目1 | Reaper読み取り専用MCP | v0.2（`mcp-reaper/`） |
+| フェーズ7・v0.2項目2 | sources.json記録 | v0.2（`sources/`, `tools/record_source.py`） |
+| フェーズ7・v0.2項目3 | deny機械チェックCLI | v0.2（`tools/deny_check.py`） |
+| フェーズ7・v0.2項目4 | 拒否メッセージ辞書 | v0.2（`tools/refusal_message.py`） |
